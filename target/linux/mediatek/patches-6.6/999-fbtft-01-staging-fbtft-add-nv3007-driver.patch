@@ -1,0 +1,319 @@
+From: HiGoROS-E87N reverse-engineering project
+Subject: [PATCH] staging: fbtft: add fb_nv3007 driver for the NewVision NV3007 LCD controller
+
+CANDIDATE / UNVALIDATED. This kernel-source-level patch is applied by the
+OpenWrt build system to the vanilla Linux 6.6.94 source tree fetched from
+kernel.org at build time (target/linux/mediatek/patches-6.6/), per the
+usual OpenWrt convention for patches that touch files outside the
+buildroot repository itself.
+
+It has NOT been compiled and has NOT been tested against real NV3007
+hardware. See reports/10-fb-nv3007-driver-recovery-plan.md and
+reports/11-fb-nv3007-candidate-implementation.md in the HiGoROS-E87N
+reverse-engineering project for:
+  - the full evidence chain confirming this driver exists (built-in) in
+    the original HiGoROS-E87N-1-26-05-09-02 firmware's kernel
+    (modules.builtin lists fb_nv3007.ko; the literal strings
+    "newvisionu,nv3007" and "fb_nv3007" are present in the decompressed
+    kernel Image itself, not just the DTB);
+  - the license/provenance review of the register initialization sequence
+    (transcribed from lvgl/lvgl, MIT license, which itself credits
+    "ArduinoGFX NV3007 driver" — moononournation/Arduino_GFX, BSD
+    2-Clause "Adafruit style" license; only the numeric register values
+    were carried over, no code structure);
+  - explicitly unresolved items, notably: no verified hardware-rotation
+    (MIPI MADCTL, cmd 0x36) register mapping — intentionally NOT
+    implemented, not guessed.
+
+Kconfig/Makefile diffs below are generated against the real upstream
+Linux v6.6 tag content (raw.githubusercontent.com/torvalds/linux/v6.6/
+drivers/staging/fbtft/{Kconfig,Makefile}, fetched verbatim, not
+paraphrased), verified in an isolated sandbox to apply cleanly and
+produce byte-identical results to the intended content before being
+folded into this file.
+
+---
+ drivers/staging/fbtft/Kconfig    |  6 ++
+ drivers/staging/fbtft/Makefile   |  1 +
+ drivers/staging/fbtft/fb_nv3007.c | 249 ++++++++++++++++++++++++++++++++
+ 3 files changed, 256 insertions(+)
+
+--- a/drivers/staging/fbtft/Kconfig
++++ b/drivers/staging/fbtft/Kconfig
+@@ -89,6 +89,12 @@
+ 	help
+ 	  Generic Framebuffer support for ILI9486
+ 
++config FB_TFT_NV3007
++	tristate "FB driver for the NV3007 LCD Controller"
++	depends on FB_TFT
++	help
++	  Generic Framebuffer support for NV3007
++
+ config FB_TFT_PCD8544
+ 	tristate "FB driver for the PCD8544 LCD Controller"
+ 	depends on FB_TFT
+
+--- a/drivers/staging/fbtft/Makefile
++++ b/drivers/staging/fbtft/Makefile
+@@ -17,6 +17,7 @@
+ obj-$(CONFIG_FB_TFT_ILI9341)     += fb_ili9341.o
+ obj-$(CONFIG_FB_TFT_ILI9481)     += fb_ili9481.o
+ obj-$(CONFIG_FB_TFT_ILI9486)     += fb_ili9486.o
++obj-$(CONFIG_FB_TFT_NV3007)      += fb_nv3007.o
+ obj-$(CONFIG_FB_TFT_PCD8544)     += fb_pcd8544.o
+ obj-$(CONFIG_FB_TFT_RA8875)      += fb_ra8875.o
+ obj-$(CONFIG_FB_TFT_S6D02A1)     += fb_s6d02a1.o
+
+--- /dev/null
++++ b/drivers/staging/fbtft/fb_nv3007.c
+@@ -0,0 +1,249 @@
++// SPDX-License-Identifier: GPL-2.0+
++/*
++ * FBTFT driver for the NewVision NV3007 LCD Controller
++ *
++ * CANDIDATE / UNVALIDATED — see reports/11-fb-nv3007-candidate-implementation.md
++ * in the HiGoROS-E87N reverse-engineering project for full provenance notes.
++ * This file has NOT been compiled or tested against real hardware.
++ *
++ * Register initialization sequence is transcribed from the register-level
++ * command table in the upstream LVGL project (lvgl/lvgl, MIT licensed),
++ * file src/drivers/display/nv3007/lv_nv3007.c, function lv_nv3007_create().
++ * That file's own header comment attributes the sequence to:
++ *   "init commands based on ArduinoGFX NV3007 driver"
++ * (moononournation/Arduino_GFX, BSD 2-Clause "Adafruit" style license,
++ * file src/display/Arduino_NV3007.cpp / .h).
++ *
++ * Neither upstream project is a Linux kernel fbtft driver; this file is a
++ * new, from-scratch fbtft-framework driver written for this project. Only
++ * the numeric panel register/init values are carried over from those two
++ * permissively-licensed public sources — the driver structure itself follows
++ * the standard Linux staging/fbtft driver pattern (see fb_ili9486.c et al.).
++ *
++ * set_var() / hardware rotation (MIPI MADCTL, cmd 0x36) is intentionally
++ * NOT implemented here: neither of the two public reference sources issues
++ * an explicit MADCTL write for this panel (rotation in the LVGL driver is
++ * handled at the software/framebuffer level, not via a hardware register),
++ * so there is no verified MADCTL bit-mapping to carry over. Hardware
++ * rotation support (if the chip has it) is left as a follow-up item and
++ * must not be guessed — see the report for details.
++ */
++
++#include <linux/module.h>
++#include <linux/kernel.h>
++#include <linux/init.h>
++
++#include <video/mipi_display.h>
++#include "fbtft.h"
++
++#define DRVNAME		"fb_nv3007"
++#define WIDTH		142
++#define HEIGHT		428
++
++/*
++ * NV3007 command bytes used directly in this file (the rest of the panel's
++ * command set is vendor-specific tuning registers sent as opaque bytes via
++ * the init sequence below, and are not given symbolic names here since we
++ * do not have a public datasheet-level register map, only the numeric
++ * values transcribed from the LVGL/Arduino_GFX reference — see file header).
++ */
++#define NV3007_SLPOUT	0x11
++#define NV3007_DISPON	0x29
++
++/*
++ * Register initialization sequence.
++ *
++ * Encoding (standard fbtft convention, see fbtft_init_display() in
++ * fbtft-core.c):
++ *   -1                 : start of a register write; the following
++ *                        non-negative bytes are (command, data...) until
++ *                        the next negative marker
++ *   -2, <ms>            : delay <ms> milliseconds
++ *   -3                  : end of sequence
++ *
++ * Transcribed from lv_nv3007_create() in lv_nv3007.c:
++ *   - the leading (0xFF, 0xA5) / trailing (0xFF, 0x00) pairs are the
++ *     vendor "register page unlock/lock" commands that in the LVGL source
++ *     are sent via a separate send_cmd_cb() call bracketing the two
++ *     command lists — reproduced here as ordinary register writes.
++ *   - the delay after NV3007_SLPOUT is transcribed from the LVGL source's
++ *     "LV_LCD_CMD_DELAY_MS, 22" token. In lv_lcd_generic_mipi.c, a delay
++ *     token's count is in units of 10 ms (see
++ *     lv_lcd_generic_mipi_send_cmd_list()), so 22 * 10 = 220 ms is used
++ *     below, NOT 22 ms.
++ */
++static const s16 default_init_sequence[] = {
++	-1, 0xFF, 0xA5,
++
++	-1, 0x9a, 0x08,
++	-1, 0x9b, 0x08,
++	-1, 0x9c, 0xb0,
++	-1, 0x9d, 0x16,
++	-1, 0x9e, 0xc4,
++	-1, 0x8f, 0x55, 0x04,
++	-1, 0x84, 0x90,
++	-1, 0x83, 0x7b,
++	-1, 0x85, 0x33,
++	-1, 0x60, 0x00,
++	-1, 0x70, 0x00,
++	-1, 0x61, 0x02,
++	-1, 0x71, 0x02,
++	-1, 0x62, 0x04,
++	-1, 0x72, 0x04,
++	-1, 0x6c, 0x29,
++	-1, 0x7c, 0x29,
++	-1, 0x6d, 0x31,
++	-1, 0x7d, 0x31,
++	-1, 0x6e, 0x0f,
++	-1, 0x7e, 0x0f,
++	-1, 0x66, 0x21,
++	-1, 0x76, 0x21,
++	-1, 0x68, 0x3a,
++	-1, 0x78, 0x3a,
++	-1, 0x63, 0x07,
++	-1, 0x73, 0x07,
++	-1, 0x64, 0x05,
++	-1, 0x74, 0x05,
++	-1, 0x65, 0x02,
++	-1, 0x75, 0x02,
++	-1, 0x67, 0x23,
++	-1, 0x77, 0x23,
++	-1, 0x69, 0x08,
++	-1, 0x79, 0x08,
++	-1, 0x6a, 0x13,
++	-1, 0x7a, 0x13,
++	-1, 0x6b, 0x13,
++	-1, 0x7b, 0x13,
++	-1, 0x6f, 0x00,
++	-1, 0x7f, 0x00,
++	-1, 0x50, 0x00,
++	-1, 0x52, 0xd6,
++	-1, 0x53, 0x08,
++	-1, 0x54, 0x08,
++	-1, 0x55, 0x1e,
++	-1, 0x56, 0x1c,
++
++	-1, 0xa0, 0x2b, 0x24, 0x00,
++
++	-1, 0xa1, 0x87,
++	-1, 0xa2, 0x86,
++	-1, 0xa5, 0x00,
++	-1, 0xa6, 0x00,
++	-1, 0xa7, 0x00,
++	-1, 0xa8, 0x36,
++	-1, 0xa9, 0x7e,
++	-1, 0xaa, 0x7e,
++	-1, 0xb9, 0x85,
++	-1, 0xba, 0x84,
++	-1, 0xbb, 0x83,
++	-1, 0xbc, 0x82,
++	-1, 0xbd, 0x81,
++	-1, 0xbe, 0x80,
++	-1, 0xbf, 0x01,
++	-1, 0xc0, 0x02,
++	-1, 0xc1, 0x00,
++	-1, 0xc2, 0x00,
++	-1, 0xc3, 0x00,
++	-1, 0xc4, 0x33,
++	-1, 0xc5, 0x7e,
++	-1, 0xc6, 0x7e,
++	-1, 0xc8, 0x33, 0x33,
++	-1, 0xc9, 0x68,
++	-1, 0xca, 0x69,
++	-1, 0xcb, 0x6a,
++	-1, 0xcc, 0x6b,
++	-1, 0xcd, 0x33, 0x33,
++	-1, 0xce, 0x6c,
++	-1, 0xcf, 0x6d,
++	-1, 0xd0, 0x6e,
++	-1, 0xd1, 0x6f,
++	-1, 0xab, 0x03, 0x67,
++	-1, 0xac, 0x03, 0x6b,
++	-1, 0xad, 0x03, 0x68,
++	-1, 0xae, 0x03, 0x6c,
++	-1, 0xb3, 0x00,
++	-1, 0xb4, 0x00,
++	-1, 0xb5, 0x00,
++	-1, 0xb6, 0x32,
++	-1, 0xb7, 0x7e,
++	-1, 0xb8, 0x7e,
++
++	-1, 0xe0, 0x00,
++	-1, 0xe1, 0x03, 0x0f,
++	-1, 0xe2, 0x04,
++	-1, 0xe3, 0x01,
++	-1, 0xe4, 0x0e,
++	-1, 0xe5, 0x01,
++	-1, 0xe6, 0x19,
++	-1, 0xe7, 0x10,
++	-1, 0xe8, 0x10,
++	-1, 0xea, 0x12,
++	-1, 0xeb, 0xd0,
++	-1, 0xec, 0x04,
++	-1, 0xed, 0x07,
++	-1, 0xee, 0x07,
++	-1, 0xef, 0x09,
++	-1, 0xf0, 0xd0,
++	-1, 0xf1, 0x0e,
++	-1, 0xf9, 0x17,
++
++	-1, 0xf2, 0x2c, 0x1b, 0x0b, 0x20,
++
++	-1, 0xe9, 0x29,
++	-1, 0xec, 0x04,
++	-1, 0x35, 0x00,
++	-1, 0x44, 0x00, 0x10,
++	-1, 0x46, 0x10,
++
++	/* register page lock */
++	-1, 0xFF, 0x00,
++
++	/* second command list: pixel format, sleep-out, delay, display-on */
++	-1, 0x3a, 0x05,
++	-1, NV3007_SLPOUT,
++	-2, 220,
++	-1, NV3007_DISPON,
++
++	-3
++};
++
++/*
++ * set_addr_win() — standard MIPI DCS column/page address window setup.
++ * This part is NOT panel-specific: it uses the same three generic MIPI DCS
++ * commands (0x2A/0x2B/0x2C) that essentially every fbtft MIPI-style panel
++ * driver in the kernel tree uses (e.g. fb_ili9486.c). No NV3007-specific
++ * assumption is made here beyond "this chip follows the standard MIPI DCS
++ * column/page addressing model", which is consistent with both public
++ * reference sources (both build on a generic MIPI panel base class/driver).
++ */
++static void set_addr_win(struct fbtft_par *par, int xs, int ys, int xe, int ye)
++{
++	write_reg(par, MIPI_DCS_SET_COLUMN_ADDRESS,
++		  xs >> 8, xs & 0xFF, xe >> 8, xe & 0xFF);
++
++	write_reg(par, MIPI_DCS_SET_PAGE_ADDRESS,
++		  ys >> 8, ys & 0xFF, ye >> 8, ye & 0xFF);
++
++	write_reg(par, MIPI_DCS_WRITE_MEMORY_START);
++}
++
++static struct fbtft_display display = {
++	.regwidth = 8,
++	.width = WIDTH,
++	.height = HEIGHT,
++	.init_sequence = default_init_sequence,
++	.fbtftops = {
++		.set_addr_win = set_addr_win,
++	},
++};
++
++FBTFT_REGISTER_DRIVER(DRVNAME, "newvisionu,nv3007", &display);
++
++MODULE_ALIAS("spi:" DRVNAME);
++MODULE_ALIAS("platform:" DRVNAME);
++MODULE_ALIAS("spi:nv3007");
++MODULE_ALIAS("platform:nv3007");
++
++MODULE_DESCRIPTION("FB driver for the NewVision NV3007 LCD Controller");
++MODULE_AUTHOR("HiGoROS-E87N reverse-engineering project");
++MODULE_LICENSE("GPL");

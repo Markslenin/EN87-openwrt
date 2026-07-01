@@ -1,0 +1,127 @@
+// SPDX-License-Identifier: (GPL-2.0 OR MIT)
+/*
+ * EdgePi E87N (MT7987A), eMMC boot.
+ *
+ * Derived from the hiveton,h5000m board base (mt7987a-hiveton-h5000m.dts)
+ * in this tree, corrected against the original HiGoROS-E87N-1-26-05-09-02
+ * factory firmware's decompiled device tree blob. See the HiGoROS-E87N
+ * reverse-engineering project reports/01, /08, /09, /10, /11, /12 for the
+ * full derivation evidence and rationale for every deviation from the
+ * H5000M base below.
+ */
+
+/dts-v1/;
+#include "mt7987a.dtsi"
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+#include "mt7987-emmc.dtsi"
+
+/ {
+	model = "EdgePi E87N";
+	compatible = "edgepi,e87n", "mediatek,mt7987a", "mediatek,mt7987";
+
+	chosen {
+		bootargs = "console=ttyS0,115200n1 fbcon=map:off fbcon=disable \
+			    root=PARTLABEL=rootfs rootwait \
+			    rootfstype=squashfs,f2fs";
+	};
+
+	gpio-keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&pio 1 GPIO_ACTIVE_LOW>;
+			debounce-interval = <10>;
+		};
+
+		wps {
+			label = "wps";
+			linux,code = <KEY_WPS_BUTTON>;
+			gpios = <&pio 0 GPIO_ACTIVE_LOW>;
+			debounce-interval = <10>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led-sys {
+			gpios = <&pio 4 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_WHITE>;
+			function = LED_FUNCTION_POWER;
+		};
+
+		led-wifi {
+			gpios = <&pio 3 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_WHITE>;
+			function = LED_FUNCTION_STATUS;
+		};
+	};
+};
+
+&fan {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pwm_fan_pins>;
+	compatible = "pwm-fan";
+	#cooling-cells = <2>;
+	cooling-levels = <0 10 20 30 40 50 60 70 80 90 100 110 120
+			  130 140 150 160 170 180 190 200 210 220 240 255>;
+	pwms = <&pwm 1 50000 0>;
+	status = "okay";
+};
+
+/*
+ * The external 2.5G PHY's MDIO address on edgepi,e87n is 3, not the
+ * hiveton,h5000m-base default of 1 (mt7987-netsys.dtsi phy1: phy@1).
+ * reset-gpios/interrupts/aldps-enable are unchanged from the base and
+ * match the firmware's own phy@3 node exactly.
+ */
+&phy1 {
+	reg = <3>;
+};
+
+/*
+ * HNAT port mapping differs from the hiveton,h5000m-base default
+ * (mtketh-lan2/mtketh-ppd = "hnat"): the firmware's decompiled hnat node
+ * uses "eth1" for both, and a different ext-devices-prefix ordering.
+ */
+&hnat {
+	mtketh-lan2 = "eth1";
+	mtketh-ppd = "eth1";
+	ext-devices-prefix = "usb", "wwan", "rmnet", "eth3", "eth2", "phy";
+};
+
+/*
+ * Small SPI screen: NewVision NV3007, 142x428, on spi2 (0x11009800).
+ * pinctrl-0 = <&spi2_flash_pins> confirmed identical (mux function/groups)
+ * to the firmware's own decompiled spi2-pins pinctrl node.
+ * reset-gpios/dc-gpios polarity confirmed against the firmware's raw DTB
+ * cells: reset-gpios = <0x16 0x0a 0x01> (GPIO_ACTIVE_LOW),
+ *        dc-gpios    = <0x16 0x0b 0x00> (GPIO_ACTIVE_HIGH).
+ * Requires CONFIG_FB_TFT_NV3007 (see patch 0002 in this series) to bind;
+ * without it this node will probe-defer/fail with no fbtft driver match.
+ */
+&spi2 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&spi2_flash_pins>;
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	display@0 {
+		compatible = "newvisionu,nv3007";
+		reg = <0>;
+		regwidth = <8>;
+		buswidth = <8>;
+		width = <142>;
+		height = <428>;
+		fps = <100>;
+		rotate = <270>;
+		reset-gpios = <&pio 10 GPIO_ACTIVE_LOW>;
+		dc-gpios = <&pio 11 GPIO_ACTIVE_HIGH>;
+		spi-max-frequency = <52428800>;
+		status = "okay";
+	};
+};

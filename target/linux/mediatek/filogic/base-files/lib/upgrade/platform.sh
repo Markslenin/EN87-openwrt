@@ -123,6 +123,7 @@ platform_do_upgrade() {
 	glinet,gl-mt6000|\
 	glinet,gl-x3000|\
 	glinet,gl-xe3000|\
+	edgepi,e87n|\
 	hiveton,h5000m|\
 	huasifei,wh3000|\
 	mediatek,mt7987a|\
@@ -206,6 +207,7 @@ platform_check_image() {
 	mediatek,mt7981-rfb|\
 	bananapi,bpi-r3|\
 	bananapi,bpi-r3-mini|\
+	edgepi,e87n|\
 	hiveton,h5000m|\
 	cmcc,rax3000m)
 		magic="$(dd if="$1" bs=1 skip=257 count=5 2>/dev/null)"
@@ -244,6 +246,7 @@ platform_copy_config() {
 	glinet,gl-mt6000|\
 	glinet,gl-x3000|\
 	glinet,gl-xe3000|\
+	edgepi,e87n|\
 	hiveton,h5000m|\
 	huasifei,wh3000|\
 	mediatek,mt7987a|\

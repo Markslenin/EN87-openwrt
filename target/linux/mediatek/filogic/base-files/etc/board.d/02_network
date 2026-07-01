@@ -215,6 +215,7 @@ mediatek_setup_interfaces()
 	mediatek,mt7987a-spim-nand-cob*)
 		ucidef_set_interfaces_lan_wan "eth0 eth2" eth1
 		;;
+	edgepi,e87n|\
 	hiveton,h5000m|\
 	mediatek,mt7987*)
 		ucidef_set_interfaces_lan_wan "eth0 hnat" eth1
@@ -276,6 +277,10 @@ mediatek_setup_macs()
 	mediatek,mt7987*)
 		lan_mac=$(mtd_get_mac_binary "Factory" "0xFFFF4")
 		wan_mac=$(mtd_get_mac_binary "Factory" "0xFFFFA")
+		;;
+	edgepi,e87n)
+		lan_mac=$(macaddr_generate_from_mmc_cid mmcblk0)
+		wan_mac=$(macaddr_add "$lan_mac" 1)
 		;;
     hiveton,h5000m)
 		lan_mac=$(macaddr_generate_from_mmc_cid mmcblk0)
