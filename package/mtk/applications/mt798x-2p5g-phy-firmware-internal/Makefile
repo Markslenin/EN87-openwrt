@@ -38,7 +38,8 @@ define Package/mt798x-2p5g-phy-firmware-internal/description
 endef
 
 define Package/mt798x-2p5g-phy-firmware-internal/install
-	if [ "$(CONFIG_WARP_CHIPSET)" = "mt7987" ]; then \
+	if [ "$(CONFIG_WARP_CHIPSET)" = "mt7987" ] || \
+	   [ "$(CONFIG_TARGET_mediatek_filogic_DEVICE_edgepi_e87n)" = "y" ]; then \
 		$(INSTALL_DIR) $(1)/lib/firmware/mediatek/mt7987; \
 		cp ./files/mt7987/i2p5ge-phy-pmb.bin $(1)/lib/firmware/mediatek/mt7987/; \
 		cp ./files/mt7987/i2p5ge-phy-DSPBitTb.bin $(1)/lib/firmware/mediatek/mt7987/; \
