@@ -1,0 +1,22 @@
+#!/bin/sh
+
+ensure_option() {
+	local section="$1" option="$2" value="$3"
+
+	uci -q get "display.$section.$option" >/dev/null || \
+		uci set "display.$section.$option=$value"
+}
+
+ensure_option settings enabled 1
+ensure_option settings brightness_percent 72
+ensure_option settings screen 1
+ensure_option settings boot_animation 1
+
+# Remove legacy pseudo-pages that the native renderer never consumed.
+uci -q delete display.overview
+uci -q delete display.network
+uci -q delete display.system
+uci -q delete display.wireless
+
+uci commit display
+exit 0

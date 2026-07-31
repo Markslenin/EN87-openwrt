@@ -854,7 +854,8 @@ define Device/edgepi_e87n
 	kmod-gpio-button-hotplug kmod-leds-gpio kmod-hwmon-pwmfan \
 	kmod-crypto-hw-safexcel \
 	kmod-usb3 kmod-usb-acm kmod-usb-net kmod-usb-net-cdc-ether kmod-usb-net-cdc-mbim kmod-usb-net-cdc-ncm kmod-usb-net-huawei-cdc-ncm kmod-usb-net-qmi-wwan kmod-usb-net-rndis kmod-usb-serial kmod-usb-serial-option kmod-usb-serial-qualcomm kmod-usb-serial-wwan kmod-usb-wdm \
-	kmod-fb kmod-fb-sys-fops kmod-fb-sys-ram kmod-backlight kmod-backlight-pwm kmod-fb-tft kmod-fb-tft-nv3007
+	kmod-fb kmod-fb-sys-fops kmod-fb-sys-ram kmod-backlight kmod-backlight-pwm kmod-fb-tft kmod-fb-tft-nv3007 \
+	fancontrol display-control
 	# NOTE: does NOT inherit hiveton-h5000m's WiFi7 stack (kmod-mt7915e,
 	# kmod-mt7992, kmod-mt799a, kmod-mt_wifi7, kmod-mt_hwifi,
 	# kmod-connac_if, mtwifi-cfg, luci-app-mtwifi-cfg, wireless-regdb,
