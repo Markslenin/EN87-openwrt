@@ -849,6 +849,7 @@ define Device/edgepi_e87n
   KERNEL_LOADADDR := 0x40080000
   BOARD_NAME := edgepi,e87n
   DEVICE_PACKAGES := \
+	-wpad-openssl \
 	mt798x-2p5g-phy-firmware-internal \
 	kmod-mediatek_hnat kmod-mtk_pci kmod-mtk_wed \
 	kmod-gpio-button-hotplug kmod-leds-gpio kmod-hwmon-pwmfan \

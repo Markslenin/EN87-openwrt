@@ -2,7 +2,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=display-control
 PKG_VERSION:=1.26.05.09.02
-PKG_RELEASE:=15
+PKG_RELEASE:=16
 PKG_LICENSE:=Proprietary OFL-1.1
 PKG_LICENSE_FILES:=files/usr/share/display-e87n/OFL.txt
 PKG_MAINTAINER:=HiGoROS
@@ -13,7 +13,7 @@ define Package/display-control
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE:=EdgePi E87N configurable framebuffer display service
-  DEPENDS:=+libc +libgcc +libfreetype +libuci
+  DEPENDS:=+libc +libgcc +libstdcpp +libfreetype +libuci
 endef
 
 define Package/display-control/description
