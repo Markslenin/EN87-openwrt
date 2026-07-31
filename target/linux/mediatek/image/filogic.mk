@@ -863,9 +863,8 @@ define Device/edgepi_e87n
 	# kmod-warp) and does NOT include luci-app-modem/sms-tool/
 	# quectel-CM-5G. Evidence from the original firmware static profile
 	# is insufficient to confirm onboard WiFi hardware or the qmodem-style
-	# modem stack on edgepi,e87n (see reports/03, /08 in the
-	# HiGoROS-E87N reverse-engineering project) — add back only if
-	# hardware evidence surfaces later.
+	# modem stack on edgepi,e87n. Add these packages only after the
+	# corresponding E87N hardware population is confirmed.
   #
   # BOARD_NAME must be "edgepi,e87n" (not the DEVICE_NAME-derived
   # "edgepi_e87n") because include/image-commands.mk's

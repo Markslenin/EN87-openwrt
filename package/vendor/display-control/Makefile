@@ -5,7 +5,7 @@ PKG_VERSION:=1.26.05.09.02
 PKG_RELEASE:=16
 PKG_LICENSE:=Proprietary OFL-1.1
 PKG_LICENSE_FILES:=files/usr/share/display-e87n/OFL.txt
-PKG_MAINTAINER:=HiGoROS
+PKG_MAINTAINER:=EN87 OpenWrt
 
 include $(INCLUDE_DIR)/package.mk
 

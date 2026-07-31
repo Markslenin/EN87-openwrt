@@ -4,7 +4,7 @@ PKG_NAME:=fancontrol
 PKG_VERSION:=1.26.05.09.02
 PKG_RELEASE:=3
 PKG_LICENSE:=Proprietary
-PKG_MAINTAINER:=HiGoROS
+PKG_MAINTAINER:=EN87 OpenWrt
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -17,7 +17,7 @@ endef
 
 define Package/fancontrol/description
   Vendor fancontrol binary, init script, and default UCI config from the
-  HiGoROS-E87N-1-26-05-09-02 original firmware.
+  original E87N vendor firmware release 1.26.05.09.02.
 endef
 
 define Build/Compile

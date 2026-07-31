@@ -3,11 +3,9 @@
  * EdgePi E87N (MT7987A), eMMC boot.
  *
  * Derived from the hiveton,h5000m board base (mt7987a-hiveton-h5000m.dts)
- * in this tree, corrected against the original HiGoROS-E87N-1-26-05-09-02
- * factory firmware's decompiled device tree blob. See the HiGoROS-E87N
- * reverse-engineering project reports/01, /08, /09, /10, /11, /12 for the
- * full derivation evidence and rationale for every deviation from the
- * H5000M base below.
+ * in this tree and corrected against the original E87N vendor firmware
+ * release 1.26.05.09.02 decompiled device tree. Hardware evidence was
+ * reviewed before importing the board-specific deviations below.
  */
 
 /dts-v1/;

@@ -1,4 +1,4 @@
-From: HiGoROS-E87N reverse-engineering project
+From: EN87 OpenWrt project
 Subject: [PATCH] staging: fbtft: add fb_nv3007 driver for the NewVision NV3007 LCD controller
 
 This kernel-source-level patch is applied by the
@@ -9,9 +9,9 @@ buildroot repository itself.
 
 The original E87N kernel implementation was recovered from the ARM64 Image
 and used to replace the earlier public-LVGL-derived candidate. See the
-project reports for the evidence chain and runtime validation history.
+EN87 integration history for the evidence chain and runtime validation.
   - the full evidence chain confirming this driver exists (built-in) in
-    the original HiGoROS-E87N-1-26-05-09-02 firmware's kernel
+    the original E87N vendor firmware release 1.26.05.09.02 kernel
     (modules.builtin lists fb_nv3007.ko; the literal strings
     "newvisionu,nv3007" and "fb_nv3007" are present in the decompressed
     kernel Image itself, not just the DTB);
@@ -288,5 +288,5 @@ folded into this file.
 +MODULE_ALIAS("platform:nv3007");
 +
 +MODULE_DESCRIPTION("FB driver for the NewVision NV3007 LCD Controller");
-+MODULE_AUTHOR("HiGoROS-E87N reverse-engineering project");
++MODULE_AUTHOR("EN87 OpenWrt project");
 +MODULE_LICENSE("GPL");
