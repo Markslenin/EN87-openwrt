@@ -12,6 +12,7 @@ This repository is self-contained. It is not an outer build wrapper and does not
 - Network: E87N port mapping, MediaTek HNAT packages, and packaged MT7987 internal 2.5G PHY firmware
 - Cooling: PWM fan service with explicit reporting when no tachometer input is available
 - Display: NewVision NV3007 142x428 SPI framebuffer driver, PWM backlight, and configurable dashboard service
+- Management: LuCI with Simplified Chinese, Aurora theme, HTTPS, WireGuard UI, USB storage support, and practical diagnostics
 - Base: `mt798x-mt799x-6.6-mtwifi` at `30fbc1d6deba23c0e850185021e9ee42214925eb`
 - E87N baseline tip: `627a548c276d8e18b70a3e4faf7af9fac53793f3`
 
@@ -28,7 +29,7 @@ cd EN87-openwrt
 ./scripts/feeds update -a
 ./scripts/feeds install -a
 
-cp configs/e87n-fan-display.config .config
+cp configs/e87n.config .config
 make defconfig
 make -j"$(nproc)"
 ```
@@ -39,12 +40,14 @@ Firmware artifacts are written below `bin/targets/mediatek/filogic/`. The E87N p
 
 | Path | Purpose |
 | --- | --- |
-| `configs/e87n-fan-display.config` | Reproducible E87N build configuration |
+| `configs/e87n.config` | Reproducible E87N build configuration |
+| `docs/e87n-build-profile.md` | Included and intentionally excluded default features |
 | `target/linux/mediatek/dts/mt7987a-edgepi-e87n.dts` | Board hardware description |
 | `target/linux/mediatek/image/filogic.mk` | E87N image and package profile |
 | `target/linux/mediatek/patches-6.6/999-fbtft-01-staging-fbtft-add-nv3007-driver.patch` | NV3007 framebuffer driver |
 | `package/vendor/fancontrol/` | Vendor fan daemon and E87N runtime integration |
 | `package/vendor/display-control/` | Native display service and vendor compatibility fallback |
+| `package/vendor/luci-theme-aurora/` | Pinned Aurora LuCI theme source snapshot |
 | `package/mtk/applications/mt798x-2p5g-phy-firmware-internal/` | MT7987/MT7988 internal 2.5G PHY firmware packaging |
 
 ## Build validation
@@ -63,4 +66,4 @@ The fan integration intentionally does not report a fabricated RPM value when th
 
 ## Upstream and license
 
-The source tree is derived from ImmortalWrt/OpenWrt and retains the licenses of the corresponding upstream components. Vendor binaries under `package/vendor/` remain proprietary; the bundled Oswald font is covered by the included OFL-1.1 license file.
+The source tree is derived from ImmortalWrt/OpenWrt and retains the licenses of the corresponding upstream components. Aurora is vendored from `eamonxg/luci-theme-aurora` at commit `e681ecb0f44ee3e1d5712b8104a3ad38a3e7c4da` under Apache-2.0. Other vendor binaries under `package/vendor/` remain proprietary; the bundled Oswald font is covered by the included OFL-1.1 license file.
