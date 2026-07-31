@@ -7,39 +7,67 @@ USE_PROCD=1
 NAME=fancontrol
 PROG=/usr/bin/$NAME
 
+resolve_pwmfan_paths() {
+	local name hwmon
+
+	for name in /sys/class/hwmon/hwmon*/name; do
+		[ -r "$name" ] || continue
+		[ "$(cat "$name" 2>/dev/null)" = "pwmfan" ] || continue
+
+		hwmon="${name%/name}"
+		[ -e "$hwmon/pwm1" ] || continue
+
+		# hwmon numbering depends on probe order and is not stable.
+		# Runtime UCI deltas let the daemon consume the live paths.
+		uci -q set fancontrol.settings.fan_file="$hwmon/pwm1"
+		uci -q set fancontrol.settings.fan_rpm_file="$hwmon/fan1_input"
+		return 0
+	done
+
+	logger -t fancontrol "pwmfan hwmon device not found"
+	return 1
+}
+
+apply_mode_curve() {
+	local mode curve
+
+	config_get mode settings mode 1
+	case "$mode" in
+		0) config_get curve settings curve_silent ;;
+		2) config_get curve settings curve_performance ;;
+		*) config_get curve settings curve_balanced ;;
+	esac
+
+	[ -n "$curve" ] && uci -q set fancontrol.settings.curve="$curve"
+}
+
 start_service() {
-    config_load "$NAME"
+	local enable mode
 
-    local enable
-    config_get enable settings enable
-    [ "$enable" = "1" ] || { echo "Instance \"$NAME\" disabled."; return 1; }
+	resolve_pwmfan_paths || return 1
+	config_load "$NAME"
+	apply_mode_curve
 
-    local mode
-    config_get mode settings mode
+	config_get enable settings enable
+	[ "$enable" = "1" ] || {
+		echo "Instance \"$NAME\" disabled."
+		return 1
+	}
 
-    procd_open_instance
-    procd_set_param command $PROG
-    [ -n "$mode" ] && procd_append_param command -M "$mode"
-    procd_set_param respawn
-    procd_close_instance
-}
+	config_get mode settings mode
 
-start() {
-    start_service
-}
-
-reload() {
-    procd_reload_instance
+	procd_open_instance
+	procd_set_param command "$PROG"
+	[ -n "$mode" ] && procd_append_param command -M "$mode"
+	procd_set_param respawn
+	procd_close_instance
 }
 
 reload_service() {
-    # 配置文件变化时，创建一个标志文件，通知 C 程序
-    local enable
-    config_get enable settings enable
-    [ "$enable" = "0" ] && touch /tmp/fancontrol.close
-    touch /tmp/fancontrol.changed
+	stop
+	start
 }
 
 service_triggers() {
-    procd_add_reload_trigger "fancontrol"
+	procd_add_reload_trigger fancontrol
 }

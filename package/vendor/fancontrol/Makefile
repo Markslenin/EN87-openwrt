@@ -2,7 +2,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=fancontrol
 PKG_VERSION:=1.26.05.09.02
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 PKG_LICENSE:=Proprietary
 PKG_MAINTAINER:=HiGoROS
 
