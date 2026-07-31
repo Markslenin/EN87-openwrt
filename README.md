@@ -47,6 +47,14 @@ Firmware artifacts are written below `bin/targets/mediatek/filogic/`. The E87N p
 | `package/vendor/display-control/` | Native display service and vendor compatibility fallback |
 | `package/mtk/applications/mt798x-2p5g-phy-firmware-internal/` | MT7987/MT7988 internal 2.5G PHY firmware packaging |
 
+## Build validation
+
+The `3bf4e6bed4` source baseline completed `make -j32` with exit code 0 on Google Compute Engine, Ubuntu 24.04 x86_64, on 2026-07-31. It produced both `immortalwrt-mediatek-filogic-edgepi_e87n-initramfs-kernel.bin` and `immortalwrt-mediatek-filogic-edgepi_e87n-squashfs-sysupgrade.bin`.
+
+The generated squashfs was inspected and contains the MT7987 PMB/DSP 2.5G PHY firmware, `fb_nv3007.ko`, `fancontrol`, `display-control`, and the native `display-e87n` binary. The sysupgrade control record identifies `BOARD=edgepi,e87n`; all generated entries in `sha256sums` passed verification.
+
+This is build validation, not physical-board validation.
+
 ## Validation boundary
 
 A successful source build verifies configuration, patch application, package dependencies, and image generation. It does not by itself verify boot, eMMC upgrade/recovery, fan electrical behavior, display operation, PHY link stability, hardware offload, or routed throughput on a physical E87N board.
