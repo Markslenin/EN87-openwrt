@@ -20,7 +20,17 @@ resolve_pwmfan_paths() {
 		# hwmon numbering depends on probe order and is not stable.
 		# Runtime UCI deltas let the daemon consume the live paths.
 		uci -q set fancontrol.settings.fan_file="$hwmon/pwm1"
-		uci -q set fancontrol.settings.fan_rpm_file="$hwmon/fan1_input"
+		if [ -r "$hwmon/fan1_input" ]; then
+			uci -q set fancontrol.settings.fan_rpm_file="$hwmon/fan1_input"
+			uci -q set fancontrol.settings.rpm_supported='1'
+		else
+			# The E87N factory FDT exposes only the PWM output.  Do not leave a
+			# stale hwmon path that suggests tachometer RPM is available.
+			uci -q delete fancontrol.settings.fan_rpm_file
+			uci -q set fancontrol.settings.rpm_supported='0'
+			logger -t fancontrol \
+				"RPM unavailable: pwm-fan has no tachometer IRQ/fan1_input"
+		fi
 		return 0
 	done
 
@@ -70,4 +80,25 @@ reload_service() {
 
 service_triggers() {
 	procd_add_reload_trigger fancontrol
+}
+
+extra_command "rpm_status" "Show fan tachometer capability and current RPM"
+
+rpm_status() {
+	local name hwmon
+
+	for name in /sys/class/hwmon/hwmon*/name; do
+		[ -r "$name" ] || continue
+		[ "$(cat "$name" 2>/dev/null)" = "pwmfan" ] || continue
+		hwmon="${name%/name}"
+		if [ -r "$hwmon/fan1_input" ]; then
+			printf 'supported: %s RPM\n' "$(cat "$hwmon/fan1_input")"
+			return 0
+		fi
+		echo "unsupported: this device exposes PWM control but no tachometer input"
+		return 2
+	done
+
+	echo "unavailable: pwm-fan hwmon device not found"
+	return 1
 }

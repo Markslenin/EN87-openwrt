@@ -2,7 +2,8 @@ config fancontrol settings
 	option enable '1'
 	option thermal_file '/sys/devices/virtual/thermal/thermal_zone0/temp'
 	option fan_file '/sys/devices/platform/pwm-fan/hwmon/hwmon0/pwm1'
-	option fan_rpm_file '/sys/class/hwmon/hwmon0/fan1_input'
+	# Updated at service start. The factory E87N FDT has no tachometer IRQ.
+	option rpm_supported '0'
 	option start_temp '45'
 	option start_speed '35'
 	option max_speed '255'
