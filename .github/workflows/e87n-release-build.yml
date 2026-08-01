@@ -78,6 +78,7 @@ jobs:
           target=bin/targets/mediatek/filogic
           (cd "$target" && sha256sum -c sha256sums)
           ./scripts/ci/e87n-package-check.sh
+          ./scripts/ci/e87n-mt7922-image-check.sh "$target"
           {
             echo "finished=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
             if git diff --quiet -- . ':(exclude)dl' && \

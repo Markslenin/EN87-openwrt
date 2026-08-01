@@ -10,17 +10,20 @@ This repository is self-contained. It is not an outer build wrapper and does not
 - SoC: MediaTek MT7987A
 - Storage: eMMC with squashfs/F2FS persistent overlay and sysupgrade support
 - Network: E87N port mapping, MediaTek HNAT packages, and packaged MT7987 internal 2.5G PHY firmware
+- Wireless: PCIe MT7922 (`14c3:0616`) through upstream cfg80211/mac80211 and mt76/mt7921e, with a secure 5 GHz HE80 first-boot AP
 - Cooling: PWM fan service with explicit reporting when no tachometer input is available
 - Display: NewVision NV3007 142x428 SPI framebuffer driver, PWM backlight, and configurable dashboard service
 - Management: LuCI with Simplified Chinese, Aurora theme, HTTPS, WireGuard UI, USB storage support, and practical diagnostics
 - Base: `mt798x-mt799x-6.6-mtwifi` at `30fbc1d6deba23c0e850185021e9ee42214925eb`
 - Imported E87N baseline tip: `627a548c276d8e18b70a3e4faf7af9fac53793f3`
 - Frozen hardware baseline: `v0.1.0` at `81d18efe3c7faf920a15823c84c5f2942d13efc5`
-- Current release candidate: `v0.2.0-rc3` at `bae947b05d1c1b3d069b55e09482a818b778db43`
-- Last full-device firmware validation: `r33553-3c7168017c`; RC3 policy
-  packages are running, but the complete RC3 sysupgrade image is not yet flashed
+- Current release: `v0.3.0`
+- Previous stable release: `v0.2.0` at `7942bcad75a449da847339a221d4c0281c74dc5e`
+- v0.3.0 hardware-validation commit: `085af11b52b4e3108a1d94e5d03ce6edf8927abe`
+- Last full-device firmware validation: `r0-085af11`, including MT7922 CN/HE160 AP operation
 
-The E87N image intentionally does not inherit the H5000M Wi-Fi 7 or modem package stacks until the corresponding E87N hardware population is confirmed.
+The E87N image intentionally does not inherit the H5000M Wi-Fi 7 or modem
+package stacks. Its populated MT7922 uses the upstream mt76 driver family.
 
 ## Build
 
@@ -49,6 +52,7 @@ same source commit does not silently consume newer feed packages.
 | `configs/e87n.config` | Reproducible E87N build configuration |
 | `configs/e87n-openclash.config` | Optional E87N image with OpenClash and a pinned Mihomo core |
 | `docs/e87n-build-profile.md` | Included and intentionally excluded default features |
+| `docs/mt7922-wireless.md` | MT7922 package closure, profiles and runtime acceptance checks |
 | `docs/development.md` | Branch, source-check and release workflow |
 | `docs/openclash.md` | Safe OpenClash build and first-configuration workflow |
 | `docs/vendor-components.md` | License boundary and hashes for retained vendor assets |
@@ -61,31 +65,42 @@ same source commit does not silently consume newer feed packages.
 | `target/linux/mediatek/patches-6.6/999-fbtft-01-staging-fbtft-add-nv3007-driver.patch` | NV3007 framebuffer driver |
 | `package/vendor/fancontrol/` | Vendor fan daemon and E87N runtime integration |
 | `package/vendor/display-control/` | Procd-managed native display service and vendor compatibility fallback |
-| `package/vendor/e87n-defaults/` | Idempotent E87N first-boot defaults, including HTTPS listeners |
+| `package/vendor/e87n-defaults/` | Idempotent E87N first-boot defaults, including HTTPS and secure MT7922 AP setup |
 | `package/vendor/openclash-core/` | Hash-pinned official ARM64 Mihomo core for the optional profile |
 | `package/vendor/luci-theme-aurora/` | Pinned Aurora LuCI theme source snapshot |
 | `package/mtk/applications/mt798x-2p5g-phy-firmware-internal/` | MT7987/MT7988 internal 2.5G PHY firmware packaging |
 
 ## Build validation
 
-The `v0.2.0-rc3` OpenClash profile was rebuilt from clean commit
-`bae947b05d1c1b3d069b55e09482a818b778db43` on Google Compute Engine with
+The `v0.3.0` OpenClash profile was rebuilt from clean hardware-validation commit
+`085af11b52b4e3108a1d94e5d03ce6edf8927abe` on Google Compute Engine with
 Ubuntu 24.04 x86_64. The build completed with a clean worktree before and after,
 produced initramfs and squashfs/sysupgrade images, and passed every generated
-SHA-256 check. The release includes the manifest, profile metadata and build
-evidence alongside the firmware.
+SHA-256 check. The manifest confirms the complete MT7922 dependency closure,
+mt76 package revision `-r2`, a single `wpad-openssl` provider and no wireless
+test-mode package. Release assets include the manifest, profile metadata and
+build evidence alongside the firmware.
 
-The currently deployed E87N boots as `r33553-3c7168017c` with a writable F2FS
+The currently deployed E87N boots as `r0-085af11` with a writable F2FS
 overlay. Board identity, Ethernet mapping (`eth1` WAN and `eth0` LAN), packaged
 MT7987 PHY firmware, LuCI/Aurora, HTTPS, fan, framebuffer, backlight, display,
-OpenClash TUN and the conservative IPv6 policy have been observed live. The RC3
-MediaTek HNAT policy completed a 2 GiB direct-flow test at about 538 Mbit/s with
-PPE bindings and no RX error or overflow increase. See
+OpenClash packaging and retained private configuration have been observed live.
+The PCIe MT7922 (`14c3:0616`) binds `mt7921e`; its AP capability advertises
+`HE160/5GHz`, and a CN/channel 36 AP reached `AP-ENABLED` at an actual 160 MHz
+width. The prior MediaTek HNAT policy completed a 2 GiB direct-flow test at
+about 538 Mbit/s with PPE bindings and no RX error or overflow increase. See
 `docs/hnat-validation.md` for the acceptance boundary.
 
 ## Validation boundary
 
-A successful source build verifies configuration, patch application, package dependencies, and image generation. Direct IPv4 PPE binding is validated for the tested policy, but this does not prove proxy/TUN offload or universal throughput improvement. Recovery-mode operation, pixel-perfect display output, fan tachometer sensing and long-duration PHY stability remain outside the verified boundary.
+A successful source build verifies configuration, patch application, package
+dependencies, image contents, and image generation. It does not prove that the
+MT7922 binds, registers a PHY, or sustains RF traffic on the physical board;
+those are explicit post-flash gates in `docs/mt7922-wireless.md`. Direct IPv4
+PPE binding is validated for the tested policy, but this does not prove
+proxy/TUN offload or universal throughput improvement. Recovery-mode operation,
+pixel-perfect display output, fan tachometer sensing and long-duration PHY
+stability remain outside the verified boundary.
 
 The fan integration intentionally does not report a fabricated RPM value when the hardware exposes no validated tachometer input.
 

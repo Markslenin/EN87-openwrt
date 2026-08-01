@@ -1,0 +1,67 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-or-later
+set -e
+
+. /lib/functions.sh
+
+usage() {
+	echo "usage: e87n-wifi-profile {5g-he80|5g-he160|6g-he80} [radio]" >&2
+	exit 2
+}
+
+profile="${1:-}"
+requested_radio="${2:-}"
+case "$profile" in
+	5g-he80|5g-he160|6g-he80) ;;
+	*) usage ;;
+esac
+
+radio=
+find_radio() {
+	local section="$1" path
+	config_get path "$section" path
+	if [ -n "$requested_radio" ]; then
+		[ "$section" = "$requested_radio" ] && radio="$section"
+	else
+		case "$path" in *0000:01:00.0*) radio="$section" ;; esac
+	fi
+}
+config_load wireless
+config_foreach find_radio wifi-device
+[ -n "$radio" ] || { echo 'MT7922 radio was not found in /etc/config/wireless' >&2; exit 1; }
+
+iface=
+find_iface() {
+	local section="$1" device mode
+	config_get device "$section" device
+	config_get mode "$section" mode
+	[ "$device" = "$radio" ] && [ "$mode" = "ap" ] && [ -z "$iface" ] && iface="$section"
+}
+config_foreach find_iface wifi-iface
+[ -n "$iface" ] || { echo "no AP interface is attached to $radio" >&2; exit 1; }
+
+case "$profile" in
+	5g-he80)
+		band=5g; channel=36; htmode=HE80; encryption=sae-mixed; pmf=1
+		;;
+	5g-he160)
+		band=5g; channel=36; htmode=HE160; encryption=sae-mixed; pmf=1
+		echo 'HE160 requires the bundled MT7922 AP backport and the active country/regdb rules.' >&2
+		;;
+	6g-he80)
+		band=6g; channel=auto; htmode=HE80; encryption=sae; pmf=2
+		echo '6 GHz remains subject to the configured country and wireless-regdb rules.' >&2
+		;;
+esac
+
+uci -q batch <<EOF
+set wireless.$radio.band='$band'
+set wireless.$radio.channel='$channel'
+set wireless.$radio.htmode='$htmode'
+set wireless.$radio.disabled='0'
+set wireless.$iface.encryption='$encryption'
+set wireless.$iface.ieee80211w='$pmf'
+EOF
+uci -q commit wireless
+wifi reload "$radio"
+echo "applied $profile to $radio"

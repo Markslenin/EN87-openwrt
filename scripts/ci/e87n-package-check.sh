@@ -41,15 +41,27 @@ find_optional() {
 defaults_policy="$root/package/vendor/e87n-defaults/files/zz-e87n-network-policy"
 defaults_makefile="$root/package/vendor/e87n-defaults/Makefile"
 status_tool="$root/package/vendor/e87n-defaults/files/usr/sbin/e87n-offload-status"
+wireless_defaults="$root/package/vendor/e87n-defaults/files/96-e87n-mt7922-wireless"
+wireless_status="$root/package/vendor/e87n-defaults/files/usr/sbin/e87n-mt7922-status"
+wireless_profile="$root/package/vendor/e87n-defaults/files/usr/sbin/e87n-wifi-profile"
 turbo_defaults="$root/package/mtk/applications/luci-app-turboacc-mtk/root/etc/uci-defaults/turboacc"
 turbo_makefile="$root/package/mtk/applications/luci-app-turboacc-mtk/Makefile"
 
 grep -q "network.wan6.auto='0'" "$defaults_policy"
 grep -q "fastpath_mh_eth_hnat_v6='0'" "$defaults_policy"
+grep -q "127.0.0.1#7874" "$defaults_policy"
+grep -q "! -x /etc/init.d/openclash" "$defaults_policy"
+grep -q "noresolv='0'" "$defaults_policy"
 grep -q 'PKGARCH:=all' "$defaults_makefile"
 grep -q 'zz-e87n-network-policy' "$defaults_makefile"
 grep -q 'e87n-offload-status' "$defaults_makefile"
+grep -q '96-e87n-mt7922-wireless' "$defaults_makefile"
+grep -q 'e87n-mt7922-status' "$defaults_makefile"
+grep -q 'e87n-wifi-profile' "$defaults_makefile"
 test -x "$status_tool"
+test -x "$wireless_defaults"
+test -x "$wireless_status"
+test -x "$wireless_profile"
 grep -q 'fastpath_mh_eth_hnat_v6"="0"' "$turbo_defaults"
 grep -q 'LUCI_PKGARCH:=all' "$turbo_makefile"
 for required in luci-base rpcd kmod-mediatek_hnat luci-lua-runtime; do
@@ -75,7 +87,13 @@ grep -q "network.wan6.auto='0'" \
 	"$tmp/defaults/etc/uci-defaults/zz-e87n-network-policy"
 grep -q "fastpath_mh_eth_hnat_v6='0'" \
 	"$tmp/defaults/etc/uci-defaults/zz-e87n-network-policy"
+grep -q "127.0.0.1#7874" \
+	"$tmp/defaults/etc/uci-defaults/zz-e87n-network-policy"
 test -x "$tmp/defaults/usr/sbin/e87n-offload-status"
+test -x "$tmp/defaults/usr/sbin/e87n-mt7922-status"
+test -x "$tmp/defaults/usr/sbin/e87n-wifi-profile"
+test -x "$tmp/defaults/etc/uci-defaults/96-e87n-mt7922-wireless"
+test -x "$tmp/defaults/etc/init.d/e87n-mt7922-check"
 grep -q 'fastpath_mh_eth_hnat_v6"="0"' \
 	"$tmp/turbo/etc/uci-defaults/turboacc"
 

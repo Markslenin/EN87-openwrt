@@ -39,7 +39,7 @@ proxies:
     server: 192.0.2.1
     port: 443
     cipher: 2022-blake3-aes-128-gcm
-    password: MDEyMzQ1Njc4OWFiY2RlZg==
+    password: change-me
     udp: true
 
 proxy-groups:
