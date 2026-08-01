@@ -17,9 +17,10 @@ This repository is self-contained. It is not an outer build wrapper and does not
 - Base: `mt798x-mt799x-6.6-mtwifi` at `30fbc1d6deba23c0e850185021e9ee42214925eb`
 - Imported E87N baseline tip: `627a548c276d8e18b70a3e4faf7af9fac53793f3`
 - Frozen hardware baseline: `v0.1.0` at `81d18efe3c7faf920a15823c84c5f2942d13efc5`
-- Current release candidate: `v0.2.0-rc3` at `bae947b05d1c1b3d069b55e09482a818b778db43`
-- Last full-device firmware validation: `r33553-3c7168017c`; RC3 policy
-  packages are running, but the complete RC3 sysupgrade image is not yet flashed
+- Current release: `v0.3.0`
+- Previous stable release: `v0.2.0` at `7942bcad75a449da847339a221d4c0281c74dc5e`
+- v0.3.0 hardware-validation commit: `085af11b52b4e3108a1d94e5d03ce6edf8927abe`
+- Last full-device firmware validation: `r0-085af11`, including MT7922 CN/HE160 AP operation
 
 The E87N image intentionally does not inherit the H5000M Wi-Fi 7 or modem
 package stacks. Its populated MT7922 uses the upstream mt76 driver family.
@@ -71,19 +72,23 @@ same source commit does not silently consume newer feed packages.
 
 ## Build validation
 
-The `v0.2.0-rc3` OpenClash profile was rebuilt from clean commit
-`bae947b05d1c1b3d069b55e09482a818b778db43` on Google Compute Engine with
+The `v0.3.0` OpenClash profile was rebuilt from clean hardware-validation commit
+`085af11b52b4e3108a1d94e5d03ce6edf8927abe` on Google Compute Engine with
 Ubuntu 24.04 x86_64. The build completed with a clean worktree before and after,
 produced initramfs and squashfs/sysupgrade images, and passed every generated
-SHA-256 check. The release includes the manifest, profile metadata and build
-evidence alongside the firmware.
+SHA-256 check. The manifest confirms the complete MT7922 dependency closure,
+mt76 package revision `-r2`, a single `wpad-openssl` provider and no wireless
+test-mode package. Release assets include the manifest, profile metadata and
+build evidence alongside the firmware.
 
-The currently deployed E87N boots as `r33553-3c7168017c` with a writable F2FS
+The currently deployed E87N boots as `r0-085af11` with a writable F2FS
 overlay. Board identity, Ethernet mapping (`eth1` WAN and `eth0` LAN), packaged
 MT7987 PHY firmware, LuCI/Aurora, HTTPS, fan, framebuffer, backlight, display,
-OpenClash TUN and the conservative IPv6 policy have been observed live. The RC3
-MediaTek HNAT policy completed a 2 GiB direct-flow test at about 538 Mbit/s with
-PPE bindings and no RX error or overflow increase. See
+OpenClash packaging and retained private configuration have been observed live.
+The PCIe MT7922 (`14c3:0616`) binds `mt7921e`; its AP capability advertises
+`HE160/5GHz`, and a CN/channel 36 AP reached `AP-ENABLED` at an actual 160 MHz
+width. The prior MediaTek HNAT policy completed a 2 GiB direct-flow test at
+about 538 Mbit/s with PPE bindings and no RX error or overflow increase. See
 `docs/hnat-validation.md` for the acceptance boundary.
 
 ## Validation boundary

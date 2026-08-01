@@ -80,6 +80,7 @@ assert 'existing_ssid" != "ImmortalWrt"' in defaults
 profiles = (root / "package/vendor/e87n-defaults/files/usr/sbin/e87n-wifi-profile").read_text()
 for profile in ("5g-he80", "5g-he160", "6g-he80"):
     assert profile in profiles, f"profile tool: missing {profile}"
+assert "set -eu" not in profiles, "profile tool must tolerate unset OpenWrt helper variables"
 assert "set wireless.$radio.country" not in profiles, "profiles must not override country"
 assert not re.search(r"(dfs|regdb).*(disable|bypass|ignore)", profiles, re.I)
 

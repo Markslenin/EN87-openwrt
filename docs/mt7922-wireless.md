@@ -44,6 +44,11 @@ channel selection, WPA3-SAE and required PMF; availability depends on the
 MT7922 AP capability and the active regulatory domain. Profile acceptance is
 therefore a runtime result, not a build-time promise.
 
+The v0.3.0 hardware-validation image was tested on the populated E87N. PCI ID
+`14c3:0616` bound `mt7921e`, the AP capability block advertised `HE160/5GHz`,
+and CN/channel 36 reached `AP-ENABLED` with `iw` reporting an actual 160 MHz
+channel centered at 5250 MHz. HE80 remains the fresh-install default.
+
 ## Image acceptance
 
 The formal build runs `scripts/ci/e87n-mt7922-image-check.sh`. It checks the
