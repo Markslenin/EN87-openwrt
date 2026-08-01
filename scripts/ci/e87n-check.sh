@@ -7,9 +7,11 @@ cd "$repo_root"
 
 required_files='
 configs/e87n.config
+configs/e87n-openclash.config
 package/vendor/e87n-defaults/Makefile
 package/vendor/display-control/Makefile
 package/vendor/fancontrol/Makefile
+package/vendor/openclash-core/Makefile
 target/linux/mediatek/dts/mt7987a-edgepi-e87n.dts
 target/linux/mediatek/image/filogic.mk
 target/linux/mediatek/patches-6.6/999-fbtft-01-staging-fbtft-add-nv3007-driver.patch'
@@ -40,6 +42,14 @@ if [ "${E87N_SKIP_DEFCONFIG:-0}" != 1 ]; then
 	grep -q '^CONFIG_PACKAGE_e87n-defaults=y$' .config
 	grep -q '^CONFIG_PACKAGE_display-control=y$' .config
 	grep -q '^CONFIG_PACKAGE_fancontrol=y$' .config
+
+	cp configs/e87n-openclash.config .config
+	make defconfig
+	grep -q '^CONFIG_TARGET_mediatek_filogic_DEVICE_edgepi_e87n=y$' .config
+	grep -q '^CONFIG_PACKAGE_luci-app-openclash=y$' .config
+	grep -q '^CONFIG_PACKAGE_openclash-core=y$' .config
+	grep -q '^CONFIG_PACKAGE_kmod-nft-tproxy=y$' .config
+	grep -q '^CONFIG_PACKAGE_kmod-tun=y$' .config
 fi
 
 echo 'E87N source checks passed'

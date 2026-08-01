@@ -20,8 +20,10 @@ git diff --check
 ```
 
 The check script regenerates `.config` from `configs/e87n.config`, validates the
-E87N device selection, and rejects obsolete wrapper/project names. A full image
-build remains the release gate:
+E87N device selection, validates the optional OpenClash seed, and rejects
+obsolete wrapper/project names. The stable profile is `configs/e87n.config`;
+policy variants such as `configs/e87n-openclash.config` must remain separate.
+A full image build remains the release gate:
 
 ```sh
 make -j"$(nproc)"

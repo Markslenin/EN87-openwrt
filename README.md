@@ -42,8 +42,10 @@ Firmware artifacts are written below `bin/targets/mediatek/filogic/`. The E87N p
 | Path | Purpose |
 | --- | --- |
 | `configs/e87n.config` | Reproducible E87N build configuration |
+| `configs/e87n-openclash.config` | Optional E87N image with OpenClash and a pinned Mihomo core |
 | `docs/e87n-build-profile.md` | Included and intentionally excluded default features |
 | `docs/development.md` | Branch, source-check and release workflow |
+| `docs/openclash.md` | Safe OpenClash build and first-configuration workflow |
 | `docs/vendor-components.md` | License boundary and hashes for retained vendor assets |
 | `scripts/ci/e87n-check.sh` | Local and CI source/profile validation |
 | `target/linux/mediatek/dts/mt7987a-edgepi-e87n.dts` | Board hardware description |
@@ -52,6 +54,7 @@ Firmware artifacts are written below `bin/targets/mediatek/filogic/`. The E87N p
 | `package/vendor/fancontrol/` | Vendor fan daemon and E87N runtime integration |
 | `package/vendor/display-control/` | Procd-managed native display service and vendor compatibility fallback |
 | `package/vendor/e87n-defaults/` | Idempotent E87N first-boot defaults, including HTTPS listeners |
+| `package/vendor/openclash-core/` | Hash-pinned official ARM64 Mihomo core for the optional profile |
 | `package/vendor/luci-theme-aurora/` | Pinned Aurora LuCI theme source snapshot |
 | `package/mtk/applications/mt798x-2p5g-phy-firmware-internal/` | MT7987/MT7988 internal 2.5G PHY firmware packaging |
 

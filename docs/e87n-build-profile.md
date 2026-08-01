@@ -42,8 +42,9 @@ The following are not defects in the default image:
 
 - **Wi-Fi drivers and AP stack:** E87N wireless hardware population is not yet
   established for a stable baseline. `wpad` remains explicitly removed.
-- **OpenClash, Mihomo and other proxy stacks:** policy-specific, large, and not
-  part of a hardware baseline.
+- **OpenClash and Mihomo:** policy-specific and large, so they remain outside
+  the hardware baseline. A reproducible optional image is provided through
+  `configs/e87n-openclash.config`; see `docs/openclash.md`.
 - **SQM:** software queueing usually bypasses or conflicts with the HNAT path;
   enable it only for a measured shaping requirement.
 - **UPnP:** not enabled by default because it permits LAN clients to create
