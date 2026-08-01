@@ -36,7 +36,8 @@
 
 #define LCD_W 428
 #define LCD_H 142
-#define TARGET_FPS 30
+#define ANIMATION_FPS 30
+#define DASHBOARD_FPS 3
 #define FRAME_NS 33333333L
 #define TILE_PITCH 8
 #define GRID_COLS 53
@@ -717,8 +718,8 @@ static void render_focus(Canvas *c,const Canvas *dash,float p){
     if(p<0.64f){for(int y=0;y<LCD_H;++y)for(int x=1;x<LCD_W-1;++x){uint16_t src=dash->pix[y*LCD_W+x];int lum=luma565(src);if(lum>55){blend_px(c,x-1,y,UI_GLOW,38);blend_px(c,x+1,y,UI_TEXT_BRIGHT,28);}}}
 }
 
-static void sleep_frame(double frame_start){
-    double target=frame_start+1.0/TARGET_FPS, now=mono_seconds(); double left=target-now;
+static void sleep_frame(double frame_start,double target_fps){
+    double target=frame_start+1.0/target_fps, now=mono_seconds(); double left=target-now;
     if(left>0){struct timespec ts;ts.tv_sec=(time_t)left;ts.tv_nsec=(long)((left-ts.tv_sec)*1e9);nanosleep(&ts,NULL);}
 }
 
@@ -737,7 +738,7 @@ int main(int argc,char**argv){
         if(state==ST_BOOT){render_boot(&frame,(float)elapsed);if(g_ready||elapsed>=timeout){render_dashboard(&dash,&fonts,&metrics,page);build_particles(&dash);transition_started=fs;state=ST_TRANS;}}
         else if(state==ST_TRANS){double te=fs-transition_started;render_transition(&frame,&dash,(float)te);if(te>=TRANSITION_DURATION){focus_started=fs;state=ST_FOCUS;}}
         else if(state==ST_FOCUS){double fe=fs-focus_started;render_focus(&frame,&dash,smoothstep01((float)(fe/FOCUS_DURATION)));if(fe>=FOCUS_DURATION)state=ST_DASH;}
-        else {render_dashboard(&frame,&fonts,&metrics,page);memcpy(dash.pix,frame.pix,LCD_W*LCD_H*2);}fb_present(&fb,&frame);write_heartbeat();sleep_frame(fs);
+        else {render_dashboard(&frame,&fonts,&metrics,page);memcpy(dash.pix,frame.pix,LCD_W*LCD_H*2);}fb_present(&fb,&frame);write_heartbeat();sleep_frame(fs,state==ST_DASH?DASHBOARD_FPS:ANIMATION_FPS);
     }
     fonts_close(&fonts);free(frame.pix);free(dash.pix);fb_close(&fb);return 0;
 }

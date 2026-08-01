@@ -2,7 +2,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=display-control
 PKG_VERSION:=1.26.05.09.02
-PKG_RELEASE:=17
+PKG_RELEASE:=18
 PKG_LICENSE:=GPL-2.0-or-later AND LicenseRef-Proprietary AND OFL-1.1
 PKG_LICENSE_FILES:=files/usr/share/display-e87n/OFL.txt
 PKG_MAINTAINER:=EN87 OpenWrt
