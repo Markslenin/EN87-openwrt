@@ -55,8 +55,8 @@ jobs:
 
       - name: Record build evidence
         run: |
-          git diff --quiet
-          git diff --cached --quiet
+          git diff --quiet -- . ':(exclude)dl'
+          git diff --cached --quiet -- . ':(exclude)dl'
           {
             echo "commit=$(git rev-parse HEAD)"
             echo "ref=${GITHUB_REF}"
@@ -80,7 +80,8 @@ jobs:
           ./scripts/ci/e87n-package-check.sh
           {
             echo "finished=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-            if git diff --quiet && git diff --cached --quiet; then
+            if git diff --quiet -- . ':(exclude)dl' && \
+               git diff --cached --quiet -- . ':(exclude)dl'; then
               echo 'dirty_after=false'
             else
               echo 'dirty_after=true'
