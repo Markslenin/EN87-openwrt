@@ -52,3 +52,27 @@ both locally; never commit a working node or subscription.
 Do not assume that HNAT/PPE accelerates traffic processed through Mihomo TUN or
 TProxy. Back up `/etc/config/openclash` and `/etc/openclash/` before mode,
 firewall or DNS changes.
+
+## Validated direct-flow acceleration
+
+The E87N firewall4 package must preserve the upstream flow-offload switch. A
+historical downstream patch made `resolve_offload_devices()` return an empty
+list unconditionally and removed the hardware `flags offload`; the follow-up
+patch restores both without enabling either mode by default.
+
+The validated live-router combination is:
+
+- `openclash.config.china_ip_route=1`
+- `firewall.@defaults[0].flow_offloading=1`
+- `firewall.@defaults[0].flow_offloading_hw=0`
+
+With this combination, domestic IPv4 traffic in OpenClash's China route set
+bypasses Mihomo TUN and established direct flows can enter the nftables
+software flowtable. Overseas and AI traffic still follows Mihomo policy and is
+not accelerated by the flowtable.
+
+Do not retain hardware offload merely because LuCI shows it enabled. Require
+all of the following at runtime: `flags offload` on `inet fw4 ft`, increasing
+`BIND_PPE0` or `BIND_PPE1`, a repeatable throughput improvement, and unchanged
+DIRECT/PROXY policy tests. The first E87N trial created the hardware flowtable
+but kept both PPE bind counters at zero, so hardware offload was rolled back.

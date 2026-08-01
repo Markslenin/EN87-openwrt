@@ -14,6 +14,7 @@ package/vendor/e87n-defaults/files/etc/crontabs/root
 package/vendor/display-control/Makefile
 package/vendor/fancontrol/Makefile
 package/vendor/openclash-core/Makefile
+package/network/config/firewall4/patches/003-restore-configurable-flow-offload.patch
 target/linux/mediatek/dts/mt7987a-edgepi-e87n.dts
 target/linux/mediatek/image/filogic.mk
 target/linux/mediatek/patches-6.6/999-fbtft-01-staging-fbtft-add-nv3007-driver.patch'
@@ -39,6 +40,15 @@ grep -q 'FBTFT_REGISTER_SPI_DRIVER(DRVNAME, "newvisionu", "nv3007"' \
 grep -q '^#define ANIMATION_FPS 30$' package/vendor/display-control/src/display-e87n.c
 grep -q '^#define DASHBOARD_FPS 3$' package/vendor/display-control/src/display-e87n.c
 grep -q 'INSTALL_CONF.*files/etc/crontabs/root' package/vendor/e87n-defaults/Makefile
+grep -q 'if (!this.default_option("flow_offloading"))' \
+	package/network/config/firewall4/patches/003-restore-configurable-flow-offload.patch
+grep -q 'flags offload;' \
+	package/network/config/firewall4/patches/003-restore-configurable-flow-offload.patch
+if grep -RnsE 'resolve_offload_devices: function\(\).*return \[\];' \
+	package/network/config/firewall4/patches --include='*.patch'; then
+	echo 'firewall4 flow offload is unconditionally disabled' >&2
+	exit 1
+fi
 
 cr="$(printf '\r')"
 if grep -RIl "$cr" scripts configs docs \
