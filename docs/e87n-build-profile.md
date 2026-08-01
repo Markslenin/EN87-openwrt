@@ -11,7 +11,7 @@ image formats so `make defconfig` remains reproducible.
 - EdgePi E87N DTS, eMMC sysupgrade, F2FS overlay and port mapping.
 - MediaTek HNAT/WED support and Safexcel crypto acceleration.
 - TurboACC configured for the MediaTek HNAT engine, with IPv6 HNAT disabled.
-- `e87n-defaults` release 3 carries the current first-boot network policy and
+- `e87n-defaults` release 4 carries the current first-boot network/wireless policy and
   acceleration diagnostic script; bump its package release whenever installed
   file content changes.
 - MT7987 internal 2.5G PHY driver and PMB/DSP firmware.
@@ -27,6 +27,22 @@ image formats so `make defconfig` remains reproducible.
 - `luci-ssl-openssl` plus an idempotent board default that enables IPv4 and
   IPv6 HTTPS listeners without replacing an administrator's existing setting.
 - WireGuard kernel support, `wireguard-tools` and LuCI protocol integration.
+
+### MT7922 wireless
+
+- cfg80211/mac80211 with the 802.11ac and 802.11ax build gates enabled.
+- The complete mt76 PCIe dependency chain: mt76 core, connac, mt792x common,
+  mt7921 common and mt7921e.
+- MT7921 and MT7922 firmware plus `wireless-regdb`; no local DFS/regulatory
+  relaxation is carried.
+- `wifi-scripts`, netifd/ucode dependencies, LuCI wireless configuration and
+  status support, `iw-full`, iwinfo and rpcd iwinfo integration.
+- Exactly one combined AP/supplicant provider: `wpad-openssl`, accompanied by
+  `hostapd-utils` and `wpa-cli`.
+- A fresh installation creates a secure `E87N-5G` AP on channel 36 HE80. The
+  generated key is unique to the device and is stored mode 0600 at
+  `/etc/e87n/wifi-default-key`; preserved user configuration is not replaced.
+- HE160 and 6 GHz remain opt-in profiles. See `docs/mt7922-wireless.md`.
 
 ### Storage and diagnostics
 
@@ -46,8 +62,6 @@ image formats so `make defconfig` remains reproducible.
 
 The following are not defects in the default image:
 
-- **Wi-Fi drivers and AP stack:** E87N wireless hardware population is not yet
-  established for a stable baseline. `wpad` remains explicitly removed.
 - **OpenClash and Mihomo:** policy-specific and large, so they remain outside
   the hardware baseline. A reproducible optional image is provided through
   `configs/e87n-openclash.config`; see `docs/openclash.md`.

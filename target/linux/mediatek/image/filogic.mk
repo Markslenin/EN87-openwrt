@@ -849,7 +849,18 @@ define Device/edgepi_e87n
   KERNEL_LOADADDR := 0x40080000
   BOARD_NAME := edgepi,e87n
   DEVICE_PACKAGES := \
-	-wpad-openssl \
+	-wpad -wpad-basic -wpad-basic-mbedtls -wpad-basic-openssl -wpad-basic-wolfssl \
+	-wpad-mbedtls -wpad-wolfssl -wpad-mesh -wpad-mesh-mbedtls -wpad-mesh-openssl -wpad-mesh-wolfssl \
+	-hostapd -hostapd-basic -hostapd-basic-mbedtls -hostapd-basic-openssl -hostapd-basic-wolfssl \
+	-hostapd-full -hostapd-mbedtls -hostapd-mini -hostapd-openssl -hostapd-wolfssl \
+	-wpa-supplicant -wpa-supplicant-mbedtls -wpa-supplicant-openssl -wpa-supplicant-wolfssl \
+	-wpa-supplicant-basic -wpa-supplicant-mini -wpa-supplicant-mesh-mbedtls -wpa-supplicant-mesh-openssl -wpa-supplicant-mesh-wolfssl \
+	-iw wpad-openssl hostapd-utils wpa-cli iw-full iwinfo libiwinfo rpcd-mod-iwinfo \
+	luci-mod-network luci-mod-status wireless-regdb wifi-scripts \
+	ucode ucode-mod-nl80211 ucode-mod-rtnl ucode-mod-ubus ucode-mod-uci \
+	kmod-cfg80211 kmod-mac80211 kmod-mt76-core kmod-mt76-connac \
+	kmod-mt792x-common kmod-mt7921-common kmod-mt7921e \
+	kmod-mt7921-firmware kmod-mt7922-firmware \
 	mt798x-2p5g-phy-firmware-internal \
 	kmod-mediatek_hnat luci-app-turboacc-mtk kmod-mtk_pci kmod-mtk_wed \
 	kmod-gpio-button-hotplug kmod-leds-gpio kmod-hwmon-pwmfan \
@@ -859,14 +870,16 @@ define Device/edgepi_e87n
 	kmod-fb kmod-fb-sys-fops kmod-fb-sys-ram kmod-backlight kmod-backlight-pwm kmod-fb-tft kmod-fb-tft-nv3007 \
 	luci-theme-aurora luci-ssl-openssl luci-proto-wireguard wireguard-tools \
 	e2fsprogs dosfstools exfat-mkfs exfat-fsck \
-	curl htop jq tcpdump-mini iperf3 \
+	curl htop jq pciutils ethtool tcpdump-mini iperf3 \
 	f2fsck mkf2fs fancontrol display-control e87n-defaults
 	# Keep the default image useful but conservative. See
 	# docs/e87n-build-profile.md for deliberately optional features.
-	# NOTE: does NOT inherit hiveton-h5000m's WiFi7 stack (kmod-mt7915e,
+	# NOTE: the PCIe MT7922 uses the upstream mt76/mt7921e stack above.
+	# It does NOT inherit hiveton-h5000m's WiFi7 stack (kmod-mt7915e,
 	# kmod-mt7992, kmod-mt799a, kmod-mt_wifi7, kmod-mt_hwifi,
 	# kmod-connac_if, mtwifi-cfg, luci-app-mtwifi-cfg, wireless-regdb,
-	# kmod-warp) and does NOT include luci-app-modem/sms-tool/
+	# kmod-warp) and does NOT include cfg80211 testmode, mt76-test,
+	# luci-app-modem/sms-tool/
 	# quectel-CM-5G. Evidence from the original firmware static profile
 	# is insufficient to confirm onboard WiFi hardware or the qmodem-style
 	# modem stack on edgepi,e87n. Add these packages only after the

@@ -1,0 +1,70 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-or-later
+
+. /lib/functions.sh
+. /lib/functions/system.sh
+
+[ "$(board_name)" = "edgepi,e87n" ] || exit 0
+
+# Generate mac80211 sections for newly discovered PHYs. Existing sections are
+# retained by wifi-scripts, so a preserved sysupgrade configuration is safe.
+/sbin/wifi config >/dev/null 2>&1 || true
+
+radio=
+find_mt7922_radio() {
+	local section="$1" path
+	config_get path "$section" path
+	case "$path" in
+		*0000:01:00.0*) radio="$section" ;;
+	esac
+}
+config_load wireless
+config_foreach find_mt7922_radio wifi-device
+[ -n "$radio" ] || exit 0
+
+# Only claim the untouched auto-generated interface. Never replace a user AP.
+iface=
+find_default_iface() {
+	local section="$1" device mode
+	config_get device "$section" device
+	config_get mode "$section" mode
+	[ "$device" = "$radio" ] && [ "$mode" = "ap" ] && [ -z "$iface" ] && iface="$section"
+}
+config_foreach find_default_iface wifi-iface
+[ -n "$iface" ] || exit 0
+
+configured="$(uci -q get wireless."$iface".e87n_managed)"
+[ "$configured" = "1" ] && exit 0
+disabled="$(uci -q get wireless."$radio".disabled)"
+encryption="$(uci -q get wireless."$iface".encryption)"
+existing_key="$(uci -q get wireless."$iface".key)"
+[ "$disabled" = "1" ] || exit 0
+[ -z "$existing_key" ] || exit 0
+case "${encryption:-none}" in none|open) ;; *) exit 0 ;; esac
+
+key="$(tr -dc 'A-Za-z0-9' </dev/urandom | head -c 20)"
+[ "${#key}" -eq 20 ] || exit 1
+mkdir -p /etc/e87n
+chmod 0700 /etc/e87n
+umask 077
+printf '%s\n' "$key" >/etc/e87n/wifi-default-key
+
+uci -q batch <<EOF
+set wireless.$radio.band='5g'
+set wireless.$radio.channel='36'
+set wireless.$radio.htmode='HE80'
+set wireless.$radio.country='CN'
+set wireless.$radio.disabled='0'
+set wireless.$iface.network='lan'
+set wireless.$iface.mode='ap'
+set wireless.$iface.ssid='E87N-5G'
+set wireless.$iface.encryption='sae-mixed'
+set wireless.$iface.ieee80211w='1'
+set wireless.$iface.key='$key'
+set wireless.$iface.e87n_managed='1'
+EOF
+uci -q commit wireless
+logger -t e87n-mt7922 'created secure 5 GHz channel 36 HE80 AP; key stored in /etc/e87n/wifi-default-key'
+/etc/init.d/e87n-mt7922-check enable >/dev/null 2>&1 || true
+
+exit 0

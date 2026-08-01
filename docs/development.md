@@ -28,6 +28,7 @@ A full image build remains the release gate:
 ```sh
 make -j"$(nproc)"
 sha256sum -c bin/targets/mediatek/filogic/sha256sums
+./scripts/ci/e87n-mt7922-image-check.sh
 ```
 
 Release builds must start from a clean committed tree. Record both commands in
@@ -68,6 +69,7 @@ the faster source and package-policy checks. The release workflow:
 - records the commit, profile, configuration digest and feed revisions;
 - builds either the stable or OpenClash profile;
 - verifies the complete target `sha256sums`;
+- verifies the MT7922 manifest, provider uniqueness, modules, firmware and user-space files;
 - uploads the E87N images, manifest, buildinfo files, profiles metadata,
   evidence and a release-scoped checksum file.
 
