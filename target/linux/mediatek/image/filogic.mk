@@ -860,7 +860,7 @@ define Device/edgepi_e87n
 	luci-theme-aurora luci-ssl-openssl luci-proto-wireguard wireguard-tools \
 	e2fsprogs dosfstools exfat-mkfs exfat-fsck \
 	curl htop jq tcpdump-mini iperf3 \
-	f2fsck mkf2fs fancontrol display-control
+	f2fsck mkf2fs fancontrol display-control e87n-defaults
 	# Keep the default image useful but conservative. See
 	# docs/e87n-build-profile.md for deliberately optional features.
 	# NOTE: does NOT inherit hiveton-h5000m's WiFi7 stack (kmod-mt7915e,

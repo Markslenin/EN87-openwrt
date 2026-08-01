@@ -1,0 +1,53 @@
+#!/usr/bin/python3
+# SPDX-License-Identifier: Apache-2.0
+
+import json
+import sys
+
+from passlib.hash import apr_md5_crypt, sha256_crypt, sha512_crypt
+
+
+def encrypt(request):
+    method = request["type"].strip()
+    password = request["plainpass"]
+
+    if method == "plain":
+        return password
+    if method == "md5":
+        return apr_md5_crypt.hash(password).strip()
+    if method == "sha256":
+        return sha256_crypt.using(rounds=5000).hash(password).strip()
+    if method == "sha512":
+        return sha512_crypt.using(rounds=5000).hash(password).strip()
+    if method == "bcrypt":
+        from passlib.hash import bcrypt
+
+        return bcrypt.hash(password).strip()
+    if method == "argon2":
+        from passlib.hash import argon2
+
+        return argon2.using(type="ID").hash(password).strip()
+
+    raise ValueError("unsupported password encryption method")
+
+
+def main():
+    if len(sys.argv) == 2 and sys.argv[1] == "list":
+        print('{ "encrypt": { "type": "str", "plainpass": "str" } }')
+        return 0
+
+    if len(sys.argv) != 3 or sys.argv[1:3] != ["call", "encrypt"]:
+        return 1
+
+    try:
+        encrypted = encrypt(json.loads(sys.stdin.readline()))
+        response = {"encrypted_password": encrypted}
+    except Exception as error:
+        response = {"encrypted_password": "", "error": str(error)}
+
+    print(json.dumps(response))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

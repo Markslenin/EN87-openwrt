@@ -2,8 +2,8 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=display-control
 PKG_VERSION:=1.26.05.09.02
-PKG_RELEASE:=16
-PKG_LICENSE:=Proprietary OFL-1.1
+PKG_RELEASE:=17
+PKG_LICENSE:=GPL-2.0-or-later AND LicenseRef-Proprietary AND OFL-1.1
 PKG_LICENSE_FILES:=files/usr/share/display-e87n/OFL.txt
 PKG_MAINTAINER:=EN87 OpenWrt
 
@@ -17,8 +17,8 @@ define Package/display-control
 endef
 
 define Package/display-control/description
-  Configurable native framebuffer dashboard for the EdgePi E87N, plus
-  the original vendor display binary as a compatibility fallback.
+  GPL-licensed native framebuffer dashboard for the EdgePi E87N, plus
+  the original proprietary vendor display binary as a compatibility fallback.
 endef
 
 define Build/Compile

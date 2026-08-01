@@ -11,7 +11,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/fancontrol
   SECTION:=utils
   CATEGORY:=Utilities
-  TITLE:=HiGoROS fan control daemon (vendor binary)
+  TITLE:=EdgePi E87N fan control daemon (vendor binary)
   DEPENDS:=+libc +libgcc
 endef
 

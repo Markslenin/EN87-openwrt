@@ -18,7 +18,8 @@ image formats so `make defconfig` remains reproducible.
 
 - LuCI with Simplified Chinese and the Bootstrap fallback theme.
 - Aurora theme, vendored at a reviewed and pinned upstream commit.
-- `luci-ssl-openssl` so HTTPS management is available in addition to HTTP.
+- `luci-ssl-openssl` plus an idempotent board default that enables IPv4 and
+  IPv6 HTTPS listeners without replacing an administrator's existing setting.
 - WireGuard kernel support, `wireguard-tools` and LuCI protocol integration.
 
 ### Storage and diagnostics

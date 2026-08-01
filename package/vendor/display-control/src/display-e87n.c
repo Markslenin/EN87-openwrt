@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * E87N optimized V4 renderer
  * - PingFang/Noto labels with Open Sans Condensed Light display numerals

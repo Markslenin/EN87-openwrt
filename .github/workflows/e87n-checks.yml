@@ -1,0 +1,29 @@
+name: E87N source checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source-checks:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install build prerequisites
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential flex bison gawk gettext git \
+            libncurses-dev libssl-dev python3-setuptools rsync swig unzip \
+            zlib1g-dev file wget
+      - name: Prepare feeds
+        run: |
+          ./scripts/feeds update -a
+          ./scripts/feeds install -a
+      - name: Validate E87N profile and metadata
+        run: ./scripts/ci/e87n-check.sh
