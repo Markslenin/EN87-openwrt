@@ -55,7 +55,8 @@ jobs:
 
       - name: Record build evidence
         run: |
-          test -z "$(git status --porcelain)"
+          git diff --quiet
+          git diff --cached --quiet
           {
             echo "commit=$(git rev-parse HEAD)"
             echo "ref=${GITHUB_REF}"
@@ -79,7 +80,11 @@ jobs:
           ./scripts/ci/e87n-package-check.sh
           {
             echo "finished=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-            echo "dirty_after=$([ -n "$(git status --porcelain)" ] && echo true || echo false)"
+            if git diff --quiet && git diff --cached --quiet; then
+              echo 'dirty_after=false'
+            else
+              echo 'dirty_after=true'
+            fi
             echo 'result=0'
           } >> /tmp/e87n-build-evidence.txt
           cp /tmp/e87n-build-evidence.txt "$target/e87n-build-evidence.txt"
@@ -104,4 +109,4 @@ jobs:
 
       - name: Schedule GCE shutdown
         if: always()
-        run: sudo /usr/sbin/shutdown -h +2
+        run: sudo /usr/sbin/shutdown -h +5
