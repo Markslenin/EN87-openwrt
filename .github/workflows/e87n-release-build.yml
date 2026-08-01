@@ -106,7 +106,3 @@ jobs:
             bin/targets/mediatek/filogic/version.buildinfo
             bin/targets/mediatek/filogic/e87n-build-evidence.txt
             bin/targets/mediatek/filogic/release-sha256sums
-
-      - name: Schedule GCE shutdown
-        if: always()
-        run: sudo /usr/sbin/shutdown -h +5
