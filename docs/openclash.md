@@ -89,7 +89,8 @@ distinguish these states. Keep IPv6 WAN autostart and LAN RA disabled while
 Mihomo IPv6 handling is disabled, otherwise IPv6 can bypass the proxy policy.
 Detailed live-router evidence and the drop-counter A/B are in `docs/hnat-validation.md`.
 
-The complete `v0.2.0-rc3` sysupgrade image is a release candidate and has not
-yet replaced the running firmware. The equivalent RC3 policy packages and
-settings have been exercised on the live router; keep that distinction when
-reporting deployment status.
+The complete `2c8bc422` `e87n-openclash` image has replaced the running
+firmware. OpenClash, its restored private configuration, Fake-IP DNS and the
+MT7922 HE80 AP have been exercised together on the live router. Private YAML,
+controller credentials and node secrets remain deployment state and must not
+be copied into source, build evidence, Actions artifacts or Release assets.

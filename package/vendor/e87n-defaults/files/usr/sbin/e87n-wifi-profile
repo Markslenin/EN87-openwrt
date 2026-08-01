@@ -46,7 +46,7 @@ case "$profile" in
 		;;
 	5g-he160)
 		band=5g; channel=36; htmode=HE160; encryption=sae-mixed; pmf=1
-		echo 'HE160 remains subject to the configured country, regdb and DFS rules.' >&2
+		echo 'HE160 requires the bundled MT7922 AP backport and the active country/regdb rules.' >&2
 		;;
 	6g-he80)
 		band=6g; channel=auto; htmode=HE80; encryption=sae; pmf=2

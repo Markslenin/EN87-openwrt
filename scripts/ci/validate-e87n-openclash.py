@@ -4,7 +4,8 @@ import ipaddress
 import yaml
 
 path = Path("configs/e87n-openclash.example.yaml")
-data = yaml.safe_load(path.read_text(encoding="utf-8"))
+text = path.read_text(encoding="utf-8")
+data = yaml.safe_load(text)
 
 assert "tun" not in data, "OpenClash, not the profile, owns TUN setup"
 assert "sniffer" not in data, "sniffing stays disabled unless a measured need appears"
@@ -30,6 +31,10 @@ proxies = data["proxies"]
 assert len(proxies) == 1
 assert proxies[0]["name"] == "US-VPS"
 assert ipaddress.ip_address(proxies[0]["server"]).is_private
+assert proxies[0]["password"] == "change-me", "example must not carry a usable node secret"
+assert "secret:" not in text, "controller secrets belong only in deployment state"
+for scheme in ("ss://", "ssr://", "vmess://", "vless://", "trojan://", "hysteria2://"):
+    assert scheme not in text, f"example must not embed a subscription or node URI: {scheme}"
 
 groups = {group["name"]: group for group in data["proxy-groups"]}
 proxy_group = groups["PROXY"]

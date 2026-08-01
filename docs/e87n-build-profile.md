@@ -36,8 +36,13 @@ image formats so `make defconfig` remains reproducible.
 - cfg80211/mac80211 with the 802.11ac and 802.11ax build gates enabled.
 - The complete mt76 PCIe dependency chain: mt76 core, connac, mt792x common,
   mt7921 common and mt7921e.
-- MT7921 and MT7922 firmware plus `wireless-regdb`; no local DFS/regulatory
-  relaxation is carried.
+- MT7921 and MT7922 firmware plus `wireless-regdb`. The inherited
+  `600-custom-change-txpower-and-dfs.patch` is intentionally active: for CN it
+  publishes 5150-5350 MHz at up to 160 MHz/30 dBm without the upstream
+  `DFS`/`NO-OUTDOOR` flags. This is a project policy, not an upstream default.
+- The pinned February 2025 mt76 snapshot carries the focused upstream backport
+  `8a24527e6c63914b838698ed78c44cb8a189129a`, enabling 160 MHz capability for
+  MT7922 AP interfaces without updating the rest of mt76.
 - `wifi-scripts`, netifd/ucode dependencies, LuCI wireless configuration and
   status support, `iw-full`, iwinfo and rpcd iwinfo integration.
 - Exactly one combined AP/supplicant provider: `wpad-openssl`, accompanied by
@@ -45,7 +50,8 @@ image formats so `make defconfig` remains reproducible.
 - A fresh installation creates a secure `E87N-5G` AP on channel 36 HE80. The
   generated key is unique to the device and is stored mode 0600 at
   `/etc/e87n/wifi-default-key`; preserved user configuration is not replaced.
-- HE160 and 6 GHz remain opt-in profiles. See `docs/mt7922-wireless.md`.
+- HE160 and 6 GHz remain opt-in profiles. HE160 requires separate live RF
+  acceptance; see `docs/mt7922-wireless.md`.
 
 ### Storage and diagnostics
 

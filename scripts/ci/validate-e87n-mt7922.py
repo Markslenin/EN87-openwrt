@@ -41,6 +41,7 @@ assert providers == {"wpad-openssl"}, f"image provider set is {sorted(providers)
 assert "mt76-test" not in positive
 
 mt76 = (root / "package/kernel/mt76/Makefile").read_text(encoding="utf-8")
+assert "PKG_RELEASE=2" in mt76, "mt76 backport package release must be 2"
 for definition in (
     "KernelPackage/mt76-core", "KernelPackage/mt76-connac",
     "KernelPackage/mt792x-common", "KernelPackage/mt7921-common",
@@ -53,6 +54,22 @@ for firmware in (
     "WIFI_MT7922_patch_mcu_1_1_hdr.bin", "WIFI_RAM_CODE_MT7922_1.bin",
 ):
     assert firmware in mt76, f"mt76: missing firmware {firmware}"
+
+he160_patch = (root / "package/kernel/mt76/patches/001-wifi-mt76-mt7921-add-160-mhz-ap-for-mt7922.patch").read_text()
+for marker in (
+    "8a24527e6c63914b838698ed78c44cb8a189129a",
+    "is_mt7922(phy->mt76->dev)",
+    "IEEE80211_HE_PHY_CAP0_CHANNEL_WIDTH_SET_160MHZ_IN_5G",
+):
+    assert marker in he160_patch, f"mt76 HE160 backport: missing {marker}"
+
+regdb_patch = (root / "package/firmware/wireless-regdb/patches/600-custom-change-txpower-and-dfs.patch").read_text()
+added_regdb = "\n".join(
+    line[1:] for line in regdb_patch.splitlines()
+    if line.startswith("+") and not line.startswith("+++")
+)
+assert "country CN: DFS-FCC" in regdb_patch
+assert "(5150 - 5350 @ 160), (30)" in added_regdb
 
 defaults = (root / "package/vendor/e87n-defaults/files/96-e87n-mt7922-wireless").read_text()
 for setting in ("channel='36'", "htmode='HE80'", "encryption='sae-mixed'", "country='CN'"):
