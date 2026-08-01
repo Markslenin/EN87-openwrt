@@ -17,7 +17,7 @@ has_module_file() {
 if has_module_file "mtkhnat" "mediatek_hnat"; then
 	uci -q set "turboacc.config.fastpath"="mediatek_hnat"
 	uci -q set "turboacc.config.fastpath_mh_eth_hnat"="1"
-	uci -q set "turboacc.config.fastpath_mh_eth_hnat_v6"="1"
+	uci -q set "turboacc.config.fastpath_mh_eth_hnat_v6"="0"
 	uci -q set "turboacc.config.fastpath_mh_eth_hnat_bind_rate"="30"
 elif has_module_file "fast-classifier"; then
 	uci -q set "turboacc.config.fastpath"="fast_classifier"

@@ -11,13 +11,18 @@ configs/e87n-openclash.config
 configs/e87n-openclash.example.yaml
 package/vendor/e87n-defaults/Makefile
 package/vendor/e87n-defaults/files/etc/crontabs/root
+package/vendor/e87n-defaults/files/zz-e87n-network-policy
+package/vendor/e87n-defaults/files/usr/sbin/e87n-offload-status
 package/vendor/display-control/Makefile
 package/vendor/fancontrol/Makefile
 package/vendor/openclash-core/Makefile
 package/network/config/firewall4/patches/003-restore-configurable-flow-offload.patch
 target/linux/mediatek/dts/mt7987a-edgepi-e87n.dts
 target/linux/mediatek/image/filogic.mk
-target/linux/mediatek/patches-6.6/999-fbtft-01-staging-fbtft-add-nv3007-driver.patch'
+target/linux/mediatek/patches-6.6/999-fbtft-01-staging-fbtft-add-nv3007-driver.patch
+scripts/ci/validate-e87n-fastpath.py
+scripts/ci/e87n-package-check.sh
+docs/hnat-validation.md'
 
 for path in $required_files; do
 	test -e "$path" || {
@@ -35,6 +40,7 @@ fi
 
 grep -q 'BOARD_NAME := edgepi,e87n' target/linux/mediatek/image/filogic.mk
 grep -q 'e87n-defaults' target/linux/mediatek/image/filogic.mk
+grep -q 'luci-app-turboacc-mtk' target/linux/mediatek/image/filogic.mk
 grep -q 'FBTFT_REGISTER_SPI_DRIVER(DRVNAME, "newvisionu", "nv3007"' \
 	target/linux/mediatek/patches-6.6/999-fbtft-01-staging-fbtft-add-nv3007-driver.patch
 grep -q '^#define ANIMATION_FPS 30$' package/vendor/display-control/src/display-e87n.c
@@ -60,6 +66,10 @@ if grep -RIl "$cr" scripts configs docs \
 fi
 
 python3 scripts/ci/validate-e87n-openclash.py
+python3 scripts/ci/validate-e87n-fastpath.py
+sh -n package/vendor/e87n-defaults/files/zz-e87n-network-policy
+sh -n package/vendor/e87n-defaults/files/usr/sbin/e87n-offload-status
+sh -n scripts/ci/e87n-package-check.sh
 
 openclash_root='feeds/luci/applications/luci-app-openclash'
 grep -q "option operation_mode 'fake-ip'" "$openclash_root/root/etc/config/openclash"
@@ -73,6 +83,8 @@ if [ "${E87N_SKIP_DEFCONFIG:-0}" != 1 ]; then
 	grep -q '^CONFIG_PACKAGE_e87n-defaults=y$' .config
 	grep -q '^CONFIG_PACKAGE_display-control=y$' .config
 	grep -q '^CONFIG_PACKAGE_fancontrol=y$' .config
+	grep -q '^CONFIG_PACKAGE_luci-app-turboacc-mtk=y$' .config
+	! grep -q '^CONFIG_PACKAGE_luci-app-ttyd=y$' .config
 
 	cp configs/e87n-openclash.config .config
 	make defconfig

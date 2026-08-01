@@ -851,7 +851,7 @@ define Device/edgepi_e87n
   DEVICE_PACKAGES := \
 	-wpad-openssl \
 	mt798x-2p5g-phy-firmware-internal \
-	kmod-mediatek_hnat kmod-mtk_pci kmod-mtk_wed \
+	kmod-mediatek_hnat luci-app-turboacc-mtk kmod-mtk_pci kmod-mtk_wed \
 	kmod-gpio-button-hotplug kmod-leds-gpio kmod-hwmon-pwmfan \
 	kmod-crypto-hw-safexcel \
 	kmod-usb3 kmod-usb-acm kmod-usb-net kmod-usb-net-cdc-ether kmod-usb-net-cdc-mbim kmod-usb-net-cdc-ncm kmod-usb-net-huawei-cdc-ncm kmod-usb-net-qmi-wwan kmod-usb-net-rndis kmod-usb-serial kmod-usb-serial-option kmod-usb-serial-qualcomm kmod-usb-serial-wwan kmod-usb-wdm \

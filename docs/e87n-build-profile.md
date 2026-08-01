@@ -10,9 +10,12 @@ image formats so `make defconfig` remains reproducible.
 
 - EdgePi E87N DTS, eMMC sysupgrade, F2FS overlay and port mapping.
 - MediaTek HNAT/WED support and Safexcel crypto acceleration.
+- TurboACC configured for the MediaTek HNAT engine, with IPv6 HNAT disabled.
 - MT7987 internal 2.5G PHY driver and PMB/DSP firmware.
+- IPv6 kernel support remains available, but the E87N first-boot policy disables
+  WAN6 autostart and LAN router advertisements to prevent proxy bypass.
 - Firewall4, `dnsmasq-full`, PPPoE and IPv6 client/router services inherited
-  from the ImmortalWrt target defaults.
+  from the ImmortalWrt target defaults where not overridden above.
 
 ### Management and secure access
 

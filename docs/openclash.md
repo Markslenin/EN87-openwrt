@@ -55,24 +55,32 @@ firewall or DNS changes.
 
 ## Validated direct-flow acceleration
 
-The E87N firewall4 package must preserve the upstream flow-offload switch. A
-historical downstream patch made `resolve_offload_devices()` return an empty
-list unconditionally and removed the hardware `flags offload`; the follow-up
-patch restores both without enabling either mode by default.
+The E87N contains two distinct acceleration controls: firewall4's generic
+nftables flowtable and MediaTek's proprietary HNAT hook. LuCI's software and
+hardware flow-offload checkboxes control only the former. They do not report
+the HNAT hook state.
 
 The validated live-router combination is:
 
 - `openclash.config.china_ip_route=1`
-- `firewall.@defaults[0].flow_offloading=1`
+- `firewall.@defaults[0].flow_offloading=0`
 - `firewall.@defaults[0].flow_offloading_hw=0`
+- `turboacc.config.fastpath=mediatek_hnat`
+- `turboacc.config.fastpath_mh_eth_hnat=1`
+- `turboacc.config.fastpath_mh_eth_hnat_v6=0`
+- `/sys/kernel/debug/hnat/hook_toggle` reports `enabled`
 
 With this combination, domestic IPv4 traffic in OpenClash's China route set
-bypasses Mihomo TUN and established direct flows can enter the nftables
-software flowtable. Overseas and AI traffic still follows Mihomo policy and is
-not accelerated by the flowtable.
+bypasses Mihomo TUN and can bind to the MediaTek PPE. Overseas and AI traffic
+continues through Mihomo policy. A 2 GiB direct transfer produced bindings on
+both PPE engines, averaged about 538 Mbit/s and kept Mihomo below 3 percent.
+Short repeated transfers varied substantially, so binding is proven but
+a universal throughput gain is not claimed.
 
-Do not retain hardware offload merely because LuCI shows it enabled. Require
-all of the following at runtime: `flags offload` on `inet fw4 ft`, increasing
-`BIND_PPE0` or `BIND_PPE1`, a repeatable throughput improvement, and unchanged
-DIRECT/PROXY policy tests. The first E87N trial created the hardware flowtable
-but kept both PPE bind counters at zero, so hardware offload was rolled back.
+The earlier RC2 trial enabled firewall4's generic hardware flowtable while its
+software flowtable was also active. That created `flags offload` but did not
+produce PPE bindings. Removing the nft flowtable exposed the already-enabled
+MediaTek HNAT path and produced real bindings. Use `e87n-offload-status` to
+distinguish these states. Keep IPv6 WAN autostart and LAN RA disabled while
+Mihomo IPv6 handling is disabled, otherwise IPv6 can bypass the proxy policy.
+Detailed live-router evidence and the drop-counter A/B are in `docs/hnat-validation.md`.

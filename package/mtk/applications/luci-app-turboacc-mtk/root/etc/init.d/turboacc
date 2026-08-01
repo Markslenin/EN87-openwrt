@@ -178,7 +178,7 @@ start_service() {
 		if _uci_bool_enabled "$fastpath_mh_eth_hnat"; then
 			local fastpath_mh_eth_hnat_v6 fastpath_mh_eth_hnat_bind_rate
 
-			config_get_bool fastpath_mh_eth_hnat_v6 "config" "fastpath_mh_eth_hnat_v6" "1"
+			config_get_bool fastpath_mh_eth_hnat_v6 "config" "fastpath_mh_eth_hnat_v6" "0"
 			config_get fastpath_mh_eth_hnat_bind_rate "config" "fastpath_mh_eth_hnat_bind_rate" "30"
 
 			# hnat_setting: cmd 8 = IPv6 HNAT toggle, cmd 11 = bind rate threshold

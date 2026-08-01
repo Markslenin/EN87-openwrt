@@ -2,7 +2,7 @@ name: E87N source checks
 
 on:
   push:
-    branches: [main]
+    branches: [main, 'codex/**']
   pull_request:
   workflow_dispatch:
 
@@ -12,7 +12,7 @@ permissions:
 jobs:
   source-checks:
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - name: Install build prerequisites
@@ -27,3 +27,10 @@ jobs:
           ./scripts/feeds install -a
       - name: Validate E87N profile and metadata
         run: ./scripts/ci/e87n-check.sh
+      - name: Build policy packages
+        run: |
+          make -j2 package/firewall4/compile
+          make -j2 package/e87n-defaults/compile
+          make -j2 package/mtk/applications/luci-app-turboacc-mtk/compile
+      - name: Validate packaged policy
+        run: ./scripts/ci/e87n-package-check.sh

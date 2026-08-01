@@ -30,6 +30,14 @@ make -j"$(nproc)"
 sha256sum -c bin/targets/mediatek/filogic/sha256sums
 ```
 
+Release builds must start from a clean committed tree. Record both commands in
+the release evidence before starting the build:
+
+```sh
+test -z "$(git status --porcelain)"
+git rev-parse HEAD
+```
+
 For a targeted edit, build the affected package or kernel first, then run the
 full image build before merging. Keep generated directories (`build_dir/`,
 `staging_dir/`, `tmp/`, `bin/`, and `dl/`) out of Git.
@@ -39,3 +47,14 @@ full image build before merging. Keep generated directories (`build_dir/`,
 Build and CI checks cannot validate electrical behavior. Before a release is
 called board-validated, test sysupgrade/recovery, Ethernet link stability,
 framebuffer output, backlight control, and fan behavior on an E87N device.
+
+## Legacy wrapper disposition
+
+The former outer build repository is an archive, not a build input. It may keep
+historical scripts, reports and vendor snapshots, but must not contain or drive
+the canonical source as a submodule. Do not copy fixes back into the wrapper or
+publish firmware from it.
+
+All maintained source changes, CI, tags and releases belong to this standalone
+repository. A future local checkout should use a separate clean directory;
+historical wrapper worktrees should be clearly marked read-only.

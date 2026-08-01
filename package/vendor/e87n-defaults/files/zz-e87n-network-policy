@@ -1,0 +1,33 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-or-later
+
+# E87N ships with Mihomo IPv6 disabled. Keep the default WAN policy aligned so
+# IPv6 cannot bypass the transparent proxy, while leaving kernel IPv6 support
+# available for an administrator who deliberately re-enables wan6 later.
+uci -q set network.wan6.auto='0'
+uci -q set dhcp.lan.ra='disabled'
+uci -q set dhcp.lan.dhcpv6='disabled'
+uci -q set dhcp.lan.ndp='disabled'
+
+# MediaTek's proprietary HNAT hook is the validated direct-flow engine. The
+# generic nft flowtable must stay off or it can claim flows before PPE binding.
+uci -q set firewall.@defaults[0].flow_offloading='0'
+uci -q set firewall.@defaults[0].flow_offloading_hw='0'
+
+uci -q set turboacc.config.fastpath='mediatek_hnat'
+uci -q set turboacc.config.fastpath_mh_eth_hnat='1'
+uci -q set turboacc.config.fastpath_mh_eth_hnat_v6='0'
+uci -q set turboacc.config.fastpath_mh_eth_hnat_bind_rate='30'
+uci -q set turboacc.config.fullcone='0'
+uci -q set turboacc.config.tcpcca='cubic'
+
+uci -q commit network
+uci -q commit dhcp
+uci -q commit firewall
+uci -q commit turboacc
+
+if [ -x /etc/init.d/turboacc ]; then
+	/etc/init.d/turboacc enable >/dev/null 2>&1 || true
+fi
+
+exit 0

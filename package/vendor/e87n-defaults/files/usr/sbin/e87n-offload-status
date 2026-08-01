@@ -1,0 +1,46 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-or-later
+set -u
+
+getuci() {
+	uci -q get "$1" 2>/dev/null || printf 'unset\n'
+}
+
+echo 'E87N acceleration state'
+printf 'china_bypass='; getuci openclash.config.china_ip_route
+printf 'firewall_software_flowtable='; getuci firewall.@defaults[0].flow_offloading
+printf 'firewall_hardware_flowtable='; getuci firewall.@defaults[0].flow_offloading_hw
+printf 'turboacc_engine='; getuci turboacc.config.fastpath
+printf 'turboacc_ipv6_hnat='; getuci turboacc.config.fastpath_mh_eth_hnat_v6
+printf 'wan6_auto='; getuci network.wan6.auto
+
+printf 'hnat_hook='
+cat /sys/kernel/debug/hnat/hook_toggle 2>/dev/null || echo unavailable
+
+if nft list flowtable inet fw4 ft >/dev/null 2>&1; then
+	echo 'nft_flowtable=present'
+else
+	echo 'nft_flowtable=absent'
+fi
+
+if [ -r /sys/kernel/debug/hnat/hnat_stats ]; then
+	cat /sys/kernel/debug/hnat/hnat_stats
+else
+	echo 'hnat_stats=unavailable'
+fi
+
+printf 'openclash='
+/etc/init.d/openclash status 2>/dev/null || echo unavailable
+printf 'tun='
+ip link show utun >/dev/null 2>&1 && echo up || echo down
+ipv6_route="$(ip -6 route show default 2>/dev/null | head -n 1)"
+if [ -n "$ipv6_route" ]; then
+	printf 'ipv6_default_route=%s\n' "$ipv6_route"
+else
+	echo 'ipv6_default_route=none'
+fi
+
+for f in rx_dropped rx_errors tx_dropped tx_errors; do
+	printf 'eth1_%s=' "$f"
+	cat "/sys/class/net/eth1/statistics/$f" 2>/dev/null || echo unavailable
+done
