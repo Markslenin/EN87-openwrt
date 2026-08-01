@@ -11,7 +11,7 @@ image formats so `make defconfig` remains reproducible.
 - EdgePi E87N DTS, eMMC sysupgrade, F2FS overlay and port mapping.
 - MediaTek HNAT/WED support and Safexcel crypto acceleration.
 - TurboACC configured for the MediaTek HNAT engine, with IPv6 HNAT disabled.
-- `e87n-defaults` release 4 carries the current first-boot network/wireless policy and
+- `e87n-defaults` release 5 carries the current first-boot network/wireless policy and
   acceleration diagnostic script; bump its package release whenever installed
   file content changes.
 - MT7987 internal 2.5G PHY driver and PMB/DSP firmware.

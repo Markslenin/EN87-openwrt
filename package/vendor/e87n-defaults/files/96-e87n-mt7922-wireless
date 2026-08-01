@@ -38,7 +38,13 @@ configured="$(uci -q get wireless."$iface".e87n_managed)"
 disabled="$(uci -q get wireless."$radio".disabled)"
 encryption="$(uci -q get wireless."$iface".encryption)"
 existing_key="$(uci -q get wireless."$iface".key)"
-[ "$disabled" = "1" ] || exit 0
+existing_ssid="$(uci -q get wireless."$iface".ssid)"
+# wifi-detect can emit an enabled, open "ImmortalWrt" AP on this radio. Treat
+# that exact factory placeholder as untouched, while preserving any other
+# enabled SSID as administrator-owned configuration.
+if [ "$disabled" != "1" ] && [ "$existing_ssid" != "ImmortalWrt" ]; then
+	exit 0
+fi
 [ -z "$existing_key" ] || exit 0
 case "${encryption:-none}" in none|open) ;; *) exit 0 ;; esac
 

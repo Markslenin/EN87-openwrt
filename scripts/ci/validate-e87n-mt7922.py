@@ -58,11 +58,16 @@ defaults = (root / "package/vendor/e87n-defaults/files/96-e87n-mt7922-wireless")
 for setting in ("channel='36'", "htmode='HE80'", "encryption='sae-mixed'", "country='CN'"):
     assert setting in defaults, f"default AP: missing {setting}"
 assert "/dev/urandom" in defaults and "wifi-default-key" in defaults
+assert 'existing_ssid" != "ImmortalWrt"' in defaults
 
 profiles = (root / "package/vendor/e87n-defaults/files/usr/sbin/e87n-wifi-profile").read_text()
 for profile in ("5g-he80", "5g-he160", "6g-he80"):
     assert profile in profiles, f"profile tool: missing {profile}"
 assert "set wireless.$radio.country" not in profiles, "profiles must not override country"
 assert not re.search(r"(dfs|regdb).*(disable|bypass|ignore)", profiles, re.I)
+
+status = (root / "package/vendor/e87n-defaults/files/usr/sbin/e87n-mt7922-status").read_text()
+assert 'device_real="$(readlink -f "$device"' in status
+assert '"$device_real"|"$device_real"/*' in status
 
 print("E87N MT7922 source semantics passed")

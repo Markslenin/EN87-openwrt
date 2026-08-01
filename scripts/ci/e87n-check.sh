@@ -52,7 +52,7 @@ fi
 grep -q 'BOARD_NAME := edgepi,e87n' target/linux/mediatek/image/filogic.mk
 grep -q 'e87n-defaults' target/linux/mediatek/image/filogic.mk
 grep -q 'luci-app-turboacc-mtk' target/linux/mediatek/image/filogic.mk
-grep -q '^PKG_RELEASE:=4$' package/vendor/e87n-defaults/Makefile
+grep -q '^PKG_RELEASE:=5$' package/vendor/e87n-defaults/Makefile
 grep -q 'OpenAI Codex' CONTRIBUTORS.md
 grep -q 'e87n-release-build.yml' README.md
 grep -q 'release-sha256sums' docs/development.md
