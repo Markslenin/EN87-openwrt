@@ -21,10 +21,23 @@ uci -q set turboacc.config.fastpath_mh_eth_hnat_bind_rate='30'
 uci -q set turboacc.config.fullcone='0'
 uci -q set turboacc.config.tcpcca='cubic'
 
+# A sysupgrade from the optional OpenClash profile can preserve its dnsmasq
+# upstream after the package itself is removed. Repair only that exact stale
+# endpoint; never replace an administrator's unrelated custom DNS server.
+if [ ! -x /etc/init.d/openclash ] && \
+   [ "$(uci -q get dhcp.@dnsmasq[0].server)" = '127.0.0.1#7874' ]; then
+	uci -q delete dhcp.@dnsmasq[0].server
+	uci -q set dhcp.@dnsmasq[0].noresolv='0'
+	uci -q del_list dhcp.lan.dhcp_option='3,0.0.0.0'
+	uci -q del_list dhcp.lan.dhcp_option='6,0.0.0.0'
+	logger -t e87n-defaults 'removed stale OpenClash dnsmasq endpoint from stable profile'
+fi
+
 uci -q commit network
 uci -q commit dhcp
 uci -q commit firewall
 uci -q commit turboacc
+uci -q commit dhcp
 
 if [ -x /etc/init.d/turboacc ]; then
 	/etc/init.d/turboacc enable >/dev/null 2>&1 || true

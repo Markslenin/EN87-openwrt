@@ -17,6 +17,9 @@ image formats so `make defconfig` remains reproducible.
 - MT7987 internal 2.5G PHY driver and PMB/DSP firmware.
 - IPv6 kernel support remains available, but the E87N first-boot policy disables
   WAN6 autostart and LAN router advertisements to prevent proxy bypass.
+- When sysupgrade moves from the optional OpenClash image to the stable image,
+  the defaults remove only the exact stale `127.0.0.1#7874` dnsmasq endpoint;
+  unrelated administrator DNS settings remain untouched.
 - Firewall4, `dnsmasq-full`, PPPoE and IPv6 client/router services inherited
   from the ImmortalWrt target defaults where not overridden above.
 

@@ -49,6 +49,9 @@ turbo_makefile="$root/package/mtk/applications/luci-app-turboacc-mtk/Makefile"
 
 grep -q "network.wan6.auto='0'" "$defaults_policy"
 grep -q "fastpath_mh_eth_hnat_v6='0'" "$defaults_policy"
+grep -q "127.0.0.1#7874" "$defaults_policy"
+grep -q "! -x /etc/init.d/openclash" "$defaults_policy"
+grep -q "noresolv='0'" "$defaults_policy"
 grep -q 'PKGARCH:=all' "$defaults_makefile"
 grep -q 'zz-e87n-network-policy' "$defaults_makefile"
 grep -q 'e87n-offload-status' "$defaults_makefile"
@@ -83,6 +86,8 @@ extract_ipk "$turbo_ipk" "$tmp/turbo"
 grep -q "network.wan6.auto='0'" \
 	"$tmp/defaults/etc/uci-defaults/zz-e87n-network-policy"
 grep -q "fastpath_mh_eth_hnat_v6='0'" \
+	"$tmp/defaults/etc/uci-defaults/zz-e87n-network-policy"
+grep -q "127.0.0.1#7874" \
 	"$tmp/defaults/etc/uci-defaults/zz-e87n-network-policy"
 test -x "$tmp/defaults/usr/sbin/e87n-offload-status"
 test -x "$tmp/defaults/usr/sbin/e87n-mt7922-status"
