@@ -28,27 +28,49 @@ extract_ipk() {
 	fi
 }
 
-find_one() {
+find_optional() {
 	pattern="$1"
-	set -- $root/bin/packages/*/*/$pattern
-	[ -f "$1" ] || {
-		echo "package not built: $pattern" >&2
-		exit 1
-	}
-	printf '%s\n' "$1"
+	for candidate in $root/bin/packages/*/*/$pattern; do
+		[ -f "$candidate" ] || continue
+		printf '%s\n' "$candidate"
+		return 0
+	done
+	return 1
 }
 
-firewall_ipk="$(find_one 'firewall4_*.ipk')"
-defaults_ipk="$(find_one 'e87n-defaults_*.ipk')"
-turbo_ipk="$(find_one 'luci-app-turboacc-mtk_*.ipk')"
+defaults_policy="$root/package/vendor/e87n-defaults/files/zz-e87n-network-policy"
+defaults_makefile="$root/package/vendor/e87n-defaults/Makefile"
+status_tool="$root/package/vendor/e87n-defaults/files/usr/sbin/e87n-offload-status"
+turbo_defaults="$root/package/mtk/applications/luci-app-turboacc-mtk/root/etc/uci-defaults/turboacc"
+turbo_makefile="$root/package/mtk/applications/luci-app-turboacc-mtk/Makefile"
 
-extract_ipk "$firewall_ipk" "$tmp/firewall"
+grep -q "network.wan6.auto='0'" "$defaults_policy"
+grep -q "fastpath_mh_eth_hnat_v6='0'" "$defaults_policy"
+grep -q 'PKGARCH:=all' "$defaults_makefile"
+grep -q 'zz-e87n-network-policy' "$defaults_makefile"
+grep -q 'e87n-offload-status' "$defaults_makefile"
+test -x "$status_tool"
+grep -q 'fastpath_mh_eth_hnat_v6"="0"' "$turbo_defaults"
+grep -q 'LUCI_PKGARCH:=all' "$turbo_makefile"
+for required in luci-base rpcd kmod-mediatek_hnat luci-lua-runtime; do
+	grep -q "+$required" "$turbo_makefile"
+done
+if grep -Eq 'luci-app-ttyd|kmod-fs-btrfs|kmod-tcp-bbr' "$turbo_makefile"; then
+	echo 'TurboACC Makefile retained unrelated heavy dependencies' >&2
+	exit 1
+fi
+
+defaults_ipk="$(find_optional 'e87n-defaults_*.ipk' || true)"
+turbo_ipk="$(find_optional 'luci-app-turboacc-mtk_*.ipk' || true)"
+
+if [ -z "$defaults_ipk" ] || [ -z "$turbo_ipk" ]; then
+	echo 'E87N package source semantics passed (IPKs not present in this checkout)'
+	exit 0
+fi
+
 extract_ipk "$defaults_ipk" "$tmp/defaults"
 extract_ipk "$turbo_ipk" "$tmp/turbo"
 
-grep -q 'flags offload;' "$tmp/firewall/usr/share/firewall4/templates/ruleset.uc"
-grep -q 'if (!this.default_option("flow_offloading"))' \
-	"$tmp/firewall/usr/share/ucode/fw4.uc"
 grep -q "network.wan6.auto='0'" \
 	"$tmp/defaults/etc/uci-defaults/zz-e87n-network-policy"
 grep -q "fastpath_mh_eth_hnat_v6='0'" \

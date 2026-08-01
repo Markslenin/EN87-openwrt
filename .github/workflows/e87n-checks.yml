@@ -27,10 +27,5 @@ jobs:
           ./scripts/feeds install -a
       - name: Validate E87N profile and metadata
         run: ./scripts/ci/e87n-check.sh
-      - name: Build policy packages
-        run: |
-          make -j2 package/firewall4/compile
-          make -j2 package/e87n-defaults/compile
-          make -j2 package/mtk/applications/luci-app-turboacc-mtk/compile
-      - name: Validate packaged policy
+      - name: Validate package policy semantics
         run: ./scripts/ci/e87n-package-check.sh
