@@ -27,6 +27,12 @@ endef
 define Package/e87n-defaults/install
 	$(INSTALL_DIR) $(1)/etc/uci-defaults
 	$(INSTALL_BIN) ./files/95-e87n-https $(1)/etc/uci-defaults/95-e87n-https
+	$(INSTALL_DIR) $(1)/etc/crontabs
+	$(INSTALL_CONF) ./files/etc/crontabs/root $(1)/etc/crontabs/root
+endef
+
+define Package/e87n-defaults/conffiles
+/etc/crontabs/root
 endef
 
 $(eval $(call BuildPackage,e87n-defaults))

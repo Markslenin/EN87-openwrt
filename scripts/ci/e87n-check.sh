@@ -8,7 +8,9 @@ cd "$repo_root"
 required_files='
 configs/e87n.config
 configs/e87n-openclash.config
+configs/e87n-openclash.example.yaml
 package/vendor/e87n-defaults/Makefile
+package/vendor/e87n-defaults/files/etc/crontabs/root
 package/vendor/display-control/Makefile
 package/vendor/fancontrol/Makefile
 package/vendor/openclash-core/Makefile
@@ -34,6 +36,25 @@ grep -q 'BOARD_NAME := edgepi,e87n' target/linux/mediatek/image/filogic.mk
 grep -q 'e87n-defaults' target/linux/mediatek/image/filogic.mk
 grep -q 'FBTFT_REGISTER_SPI_DRIVER(DRVNAME, "newvisionu", "nv3007"' \
 	target/linux/mediatek/patches-6.6/999-fbtft-01-staging-fbtft-add-nv3007-driver.patch
+grep -q '^#define ANIMATION_FPS 30$' package/vendor/display-control/src/display-e87n.c
+grep -q '^#define DASHBOARD_FPS 3$' package/vendor/display-control/src/display-e87n.c
+grep -q 'INSTALL_CONF.*files/etc/crontabs/root' package/vendor/e87n-defaults/Makefile
+
+cr="$(printf '\r')"
+if grep -RIl "$cr" scripts configs docs \
+	package/vendor/display-control package/vendor/e87n-defaults \
+	package/vendor/openclash-core/Makefile \
+	--exclude='*.ttf' --exclude='display' --exclude='OFL.txt'; then
+	echo 'CRLF found in E87N source files' >&2
+	exit 1
+fi
+
+python3 scripts/ci/validate-e87n-openclash.py
+
+openclash_root='feeds/luci/applications/luci-app-openclash'
+grep -q "option operation_mode 'fake-ip'" "$openclash_root/root/etc/config/openclash"
+grep -q 'o:value("fake-ip-tun"' "$openclash_root/luasrc/model/cbi/openclash/settings.lua"
+grep -q 'if \[ "$en_mode" = "fake-ip-tun" \]' "$openclash_root/root/etc/init.d/openclash"
 
 if [ "${E87N_SKIP_DEFCONFIG:-0}" != 1 ]; then
 	cp configs/e87n.config .config

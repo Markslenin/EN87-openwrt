@@ -1,0 +1,117 @@
+mixed-port: 7890
+allow-lan: false
+mode: rule
+log-level: warning
+ipv6: false
+
+profile:
+  store-selected: true
+  store-fake-ip: true
+
+dns:
+  enable: true
+  listen: 0.0.0.0:7874
+  ipv6: false
+  enhanced-mode: fake-ip
+  fake-ip-range: 198.18.0.1/16
+  fake-ip-filter:
+    - +.lan
+    - +.local
+    - localhost
+  prefer-h3: false
+  respect-rules: false
+  default-nameserver:
+    - 223.5.5.5
+    - 119.29.29.29
+  nameserver:
+    - https://dns.alidns.com/dns-query
+    - https://doh.pub/dns-query
+  proxy-server-nameserver:
+    - https://dns.alidns.com/dns-query
+    - https://doh.pub/dns-query
+  direct-nameserver:
+    - https://dns.alidns.com/dns-query
+    - https://doh.pub/dns-query
+
+proxies:
+  - name: US-VPS
+    type: ss
+    server: 192.0.2.1
+    port: 443
+    cipher: 2022-blake3-aes-128-gcm
+    password: MDEyMzQ1Njc4OWFiY2RlZg==
+    udp: true
+
+proxy-groups:
+  - name: PROXY
+    type: fallback
+    proxies:
+      - US-VPS
+    url: https://www.gstatic.com/generate_204
+    interval: 600
+    lazy: true
+
+rules:
+  - RULE-SET,private_domain,DIRECT
+  - RULE-SET,private_ip,DIRECT,no-resolve
+  - RULE-SET,google_domain,PROXY
+  - RULE-SET,ai_domain,PROXY
+  - RULE-SET,cn_domain,DIRECT
+  - RULE-SET,cn_ip,DIRECT,no-resolve
+  - MATCH,PROXY
+
+rule-providers:
+  private_domain:
+    type: http
+    behavior: domain
+    format: mrs
+    interval: 86400
+    proxy: US-VPS
+    size-limit: 4194304
+    path: ./ruleset/private-domain.mrs
+    url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/private.mrs
+  cn_domain:
+    type: http
+    behavior: domain
+    format: mrs
+    interval: 86400
+    proxy: US-VPS
+    size-limit: 4194304
+    path: ./ruleset/cn-domain.mrs
+    url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/cn.mrs
+  google_domain:
+    type: http
+    behavior: domain
+    format: mrs
+    interval: 86400
+    proxy: US-VPS
+    size-limit: 4194304
+    path: ./ruleset/google-domain.mrs
+    url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/google.mrs
+  ai_domain:
+    type: http
+    behavior: domain
+    format: mrs
+    interval: 86400
+    proxy: US-VPS
+    size-limit: 4194304
+    path: ./ruleset/category-ai-not-cn-domain.mrs
+    url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/category-ai-!cn.mrs
+  private_ip:
+    type: http
+    behavior: ipcidr
+    format: mrs
+    interval: 86400
+    proxy: US-VPS
+    size-limit: 4194304
+    path: ./ruleset/private-ip.mrs
+    url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geoip/private.mrs
+  cn_ip:
+    type: http
+    behavior: ipcidr
+    format: mrs
+    interval: 86400
+    proxy: US-VPS
+    size-limit: 4194304
+    path: ./ruleset/cn-ip.mrs
+    url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geoip/cn.mrs
