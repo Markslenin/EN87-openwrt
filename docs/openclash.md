@@ -15,6 +15,10 @@ The profile selects `luci-app-openclash` from the LuCI feed and the local
 `openclash-core` package. The latter installs the official ARM64 Mihomo binary
 at `/etc/openclash/core/clash_meta`.
 
+The LuCI feed is locked at
+`4936dfeddea460a4734fa4acdc68a9df1ace200c`; updating that pin is the explicit
+review point for future OpenClash package changes.
+
 - Mihomo version: `1.19.29`
 - Upstream asset: `mihomo-linux-arm64-v1.19.29.gz`
 - SHA-256: `9a868b5e4e0ad91d9d71e1b41b0cfce78aaba44360c30df74a723f8e3926a86c`
@@ -84,3 +88,8 @@ MediaTek HNAT path and produced real bindings. Use `e87n-offload-status` to
 distinguish these states. Keep IPv6 WAN autostart and LAN RA disabled while
 Mihomo IPv6 handling is disabled, otherwise IPv6 can bypass the proxy policy.
 Detailed live-router evidence and the drop-counter A/B are in `docs/hnat-validation.md`.
+
+The complete `v0.2.0-rc3` sysupgrade image is a release candidate and has not
+yet replaced the running firmware. The equivalent RC3 policy packages and
+settings have been exercised on the live router; keep that distinction when
+reporting deployment status.

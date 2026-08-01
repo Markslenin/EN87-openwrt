@@ -42,6 +42,39 @@ For a targeted edit, build the affected package or kernel first, then run the
 full image build before merging. Keep generated directories (`build_dir/`,
 `staging_dir/`, `tmp/`, `bin/`, and `dl/`) out of Git.
 
+## Locked feeds
+
+`feeds.conf.default` pins `packages`, `luci`, `routing` and `telephony` to exact
+commits. A release build must not replace those pins with moving branch names.
+To update feeds deliberately:
+
+1. Record the desired upstream commits and review their changes.
+2. Change all intended pins in one topic-branch commit.
+3. Run `./scripts/feeds clean`, `./scripts/feeds update -a` and
+   `./scripts/feeds install -a` so an existing checkout cannot retain an older
+   pinned worktree.
+4. Run the source checks and a full image build before merging.
+
+The generated `feeds.buildinfo` is release evidence, not a substitute for
+committing the pins.
+
+## Formal release builds
+
+`.github/workflows/e87n-release-build.yml` performs the heavyweight firmware
+build only for a `v*` tag or an explicit manual dispatch. Pull requests retain
+the faster source and package-policy checks. The release workflow:
+
+- starts from the checked-out commit and pinned feeds;
+- records the commit, profile, configuration digest and feed revisions;
+- builds either the stable or OpenClash profile;
+- verifies the complete target `sha256sums`;
+- uploads the E87N images, manifest, buildinfo files, profiles metadata,
+  evidence and a release-scoped checksum file.
+
+`release-sha256sums` deliberately lists only uploaded release artifacts. The
+buildroot's complete `sha256sums` remains an internal full-target verification
+and must not be presented as an attachment-only checksum file.
+
 ## Hardware boundary
 
 Build and CI checks cannot validate electrical behavior. Before a release is

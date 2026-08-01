@@ -6,6 +6,9 @@ repo_root="$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)"
 cd "$repo_root"
 
 required_files='
+.github/workflows/e87n-release-build.yml
+CONTRIBUTORS.md
+feeds.conf.default
 configs/e87n.config
 configs/e87n-openclash.config
 configs/e87n-openclash.example.yaml
@@ -22,6 +25,7 @@ target/linux/mediatek/image/filogic.mk
 target/linux/mediatek/patches-6.6/999-fbtft-01-staging-fbtft-add-nv3007-driver.patch
 scripts/ci/validate-e87n-fastpath.py
 scripts/ci/e87n-package-check.sh
+scripts/release/e87n-release-assets.sh
 docs/hnat-validation.md'
 
 for path in $required_files; do
@@ -41,6 +45,18 @@ fi
 grep -q 'BOARD_NAME := edgepi,e87n' target/linux/mediatek/image/filogic.mk
 grep -q 'e87n-defaults' target/linux/mediatek/image/filogic.mk
 grep -q 'luci-app-turboacc-mtk' target/linux/mediatek/image/filogic.mk
+grep -q '^PKG_RELEASE:=3$' package/vendor/e87n-defaults/Makefile
+grep -q 'OpenAI Codex' CONTRIBUTORS.md
+grep -q 'e87n-release-build.yml' README.md
+grep -q 'release-sha256sums' docs/development.md
+
+for pin in \
+	50afba57f43f57ed94e8c117c40a343cd9929126 \
+	4936dfeddea460a4734fa4acdc68a9df1ace200c \
+	946e9ff93be935fce6c03f4c02124833c35c2f56 \
+	92892fa285360b8981f62bf4e0a097e6449e7e33; do
+	grep -q "\\^$pin$" feeds.conf.default
+done
 grep -q 'FBTFT_REGISTER_SPI_DRIVER(DRVNAME, "newvisionu", "nv3007"' \
 	target/linux/mediatek/patches-6.6/999-fbtft-01-staging-fbtft-add-nv3007-driver.patch
 grep -q '^#define ANIMATION_FPS 30$' package/vendor/display-control/src/display-e87n.c
@@ -57,19 +73,35 @@ if grep -RnsE 'resolve_offload_devices: function\(\).*return \[\];' \
 fi
 
 cr="$(printf '\r')"
-if grep -RIl "$cr" scripts configs docs \
+if grep -RIl "$cr" scripts configs docs .github \
 	package/vendor/display-control package/vendor/e87n-defaults \
 	package/vendor/openclash-core/Makefile \
 	--exclude='*.ttf' --exclude='display' --exclude='OFL.txt'; then
 	echo 'CRLF found in E87N source files' >&2
 	exit 1
 fi
+if grep -Il "$cr" README.md CONTRIBUTORS.md feeds.conf.default; then
+	echo 'CRLF found in E87N root metadata' >&2
+	exit 1
+fi
 
 python3 scripts/ci/validate-e87n-openclash.py
 python3 scripts/ci/validate-e87n-fastpath.py
+python3 - <<'PY'
+from pathlib import Path
+
+import yaml
+
+for path in Path('.github/workflows').glob('*.yml'):
+    with path.open(encoding='utf-8') as stream:
+        document = yaml.safe_load(stream)
+    if not isinstance(document, dict) or 'jobs' not in document:
+        raise SystemExit(f'invalid workflow structure: {path}')
+PY
 sh -n package/vendor/e87n-defaults/files/zz-e87n-network-policy
 sh -n package/vendor/e87n-defaults/files/usr/sbin/e87n-offload-status
 sh -n scripts/ci/e87n-package-check.sh
+sh -n scripts/release/e87n-release-assets.sh
 
 openclash_root='feeds/luci/applications/luci-app-openclash'
 grep -q "option operation_mode 'fake-ip'" "$openclash_root/root/etc/config/openclash"

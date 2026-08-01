@@ -4,6 +4,10 @@ This records the live-router acceptance evidence for the RC3 candidate. It is
 not a generic MT7987 benchmark and does not claim that Mihomo TUN traffic is
 hardware accelerated.
 
+The tested runtime map was `eth1` for WAN and `br-lan` for LAN, with `eth0` and
+the MediaTek `hnat` interface in the bridge. Revalidate this map before applying
+the result to a different network configuration.
+
 ## Validated policy
 
 - OpenClash China IPv4 bypass enabled.

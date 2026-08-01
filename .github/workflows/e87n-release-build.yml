@@ -1,0 +1,118 @@
+name: E87N formal firmware build
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: Firmware profile to build
+        required: true
+        default: e87n-openclash
+        type: choice
+        options:
+          - e87n-openclash
+          - e87n
+
+permissions:
+  contents: read
+
+concurrency:
+  group: e87n-release-build-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  BUILD_PROFILE: ${{ github.event_name == 'workflow_dispatch' && inputs.profile || 'e87n-openclash' }}
+
+jobs:
+  firmware:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Reclaim runner disk space
+        run: |
+          sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc
+          df -h /
+
+      - name: Install build prerequisites
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential clang flex bison g++ gawk \
+            gcc-multilib gettext git libelf-dev libncurses-dev libssl-dev \
+            python3-setuptools python3-yaml rsync swig unzip zlib1g-dev \
+            file wget zstd
+
+      - name: Cache source downloads
+        uses: actions/cache@v4
+        with:
+          path: dl
+          key: e87n-dl-${{ runner.os }}-${{ hashFiles('feeds.conf.default', 'package/**/Makefile', 'toolchain/**/Makefile') }}
+          restore-keys: |
+            e87n-dl-${{ runner.os }}-
+
+      - name: Prepare locked feeds
+        run: |
+          ./scripts/feeds update -a
+          ./scripts/feeds install -a
+
+      - name: Validate source policy
+        run: E87N_SKIP_DEFCONFIG=1 ./scripts/ci/e87n-check.sh
+
+      - name: Configure firmware
+        run: |
+          test -f "configs/${BUILD_PROFILE}.config"
+          cp "configs/${BUILD_PROFILE}.config" .config
+          make defconfig
+          ./scripts/diffconfig.sh > /tmp/e87n-diffconfig.txt
+
+      - name: Record build evidence
+        run: |
+          test -z "$(git status --porcelain)"
+          {
+            echo "commit=$(git rev-parse HEAD)"
+            echo "ref=${GITHUB_REF}"
+            echo "profile=${BUILD_PROFILE}"
+            echo "runner=${RUNNER_OS}-${RUNNER_ARCH}"
+            echo "started=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            sha256sum "configs/${BUILD_PROFILE}.config" feeds.conf.default
+            ./scripts/feeds list -s
+          } | tee /tmp/e87n-build-evidence.txt
+
+      - name: Download sources
+        run: make download -j8
+
+      - name: Build firmware
+        run: make -j"$(nproc)"
+
+      - name: Verify and stage release assets
+        run: |
+          target=bin/targets/mediatek/filogic
+          (cd "$target" && sha256sum -c sha256sums)
+          ./scripts/ci/e87n-package-check.sh
+          {
+            echo "finished=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo "dirty_after=$([ -n "$(git status --porcelain)" ] && echo true || echo false)"
+            echo 'result=0'
+          } >> /tmp/e87n-build-evidence.txt
+          cp /tmp/e87n-build-evidence.txt "$target/e87n-build-evidence.txt"
+          ./scripts/release/e87n-release-assets.sh "$target"
+
+      - name: Upload firmware artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ github.ref_name }}-${{ env.BUILD_PROFILE }}
+          if-no-files-found: error
+          retention-days: 30
+          path: |
+            bin/targets/mediatek/filogic/immortalwrt-mediatek-filogic-edgepi_e87n-initramfs-kernel.bin
+            bin/targets/mediatek/filogic/immortalwrt-mediatek-filogic-edgepi_e87n-squashfs-sysupgrade.bin
+            bin/targets/mediatek/filogic/immortalwrt-mediatek-filogic-edgepi_e87n.manifest
+            bin/targets/mediatek/filogic/profiles.json
+            bin/targets/mediatek/filogic/config.buildinfo
+            bin/targets/mediatek/filogic/feeds.buildinfo
+            bin/targets/mediatek/filogic/version.buildinfo
+            bin/targets/mediatek/filogic/e87n-build-evidence.txt
+            bin/targets/mediatek/filogic/release-sha256sums
