@@ -15,10 +15,16 @@ for package in \
 	kmod-cfg80211 kmod-mac80211 kmod-mt76-core kmod-mt76-connac \
 	kmod-mt792x-common kmod-mt7921-common kmod-mt7921e \
 	kmod-mt7921-firmware kmod-mt7922-firmware wireless-regdb wifi-scripts \
-	wpad-openssl hostapd-utils wpa-cli iw-full iwinfo libiwinfo rpcd-mod-iwinfo \
+	wpad-openssl hostapd-utils wpa-cli iw-full iwinfo rpcd-mod-iwinfo \
 	luci-mod-network luci-mod-status pciutils ethtool iperf3 tcpdump-mini; do
 	has_package "$package" || { echo "manifest missing $package" >&2; exit 1; }
 done
+# libiwinfo is a virtual selection; the manifest records its ABI-versioned
+# implementation (for example libiwinfo20230701), not the virtual name.
+grep -Eq '^libiwinfo[0-9]+( - |$)' "$manifest" || {
+	echo 'manifest missing ABI-versioned libiwinfo provider' >&2
+	exit 1
+}
 
 providers="$(sed -nE '/^(wpad(-[^ ]+)?|hostapd(-basic|-full|-mini|-mbedtls|-openssl|-wolfssl)?|wpa-supplicant(-[^ ]+)?)($| - )/s/ .*//p' "$manifest" | sort -u)"
 [ "$providers" = "wpad-openssl" ] || {
