@@ -6,9 +6,11 @@ root="$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)"
 target="${1:-$root/bin/targets/mediatek/filogic}"
 manifest="$target/immortalwrt-mediatek-filogic-edgepi_e87n.manifest"
 config="$target/config.buildinfo"
+build_config="${E87N_BUILD_CONFIG:-$root/.config}"
 
 test -f "$manifest" || { echo "missing manifest: $manifest" >&2; exit 1; }
 test -f "$config" || { echo "missing config.buildinfo: $config" >&2; exit 1; }
+test -f "$build_config" || { echo "missing complete build config: $build_config" >&2; exit 1; }
 
 has_package() { grep -Eq "^$1( - |$)" "$manifest"; }
 for package in \
@@ -32,10 +34,12 @@ providers="$(sed -nE '/^(wpad(-[^ ]+)?|hostapd(-basic|-full|-mini|-mbedtls|-open
 	exit 1
 }
 ! has_package mt76-test
-grep -q '^CONFIG_DRIVER_11AX_SUPPORT=y$' "$config"
-grep -q '^CONFIG_PACKAGE_wpad-openssl=y$' "$config"
-! grep -q '^CONFIG_PACKAGE_CFG80211_TESTMODE=y$' "$config"
-! grep -q '^CONFIG_PACKAGE_mt76-test=y$' "$config"
+# config.buildinfo intentionally omits some global build feature gates. The
+# generated .config is the authoritative record for these release assertions.
+grep -q '^CONFIG_DRIVER_11AX_SUPPORT=y$' "$build_config"
+grep -q '^CONFIG_PACKAGE_wpad-openssl=y$' "$build_config"
+! grep -q '^CONFIG_PACKAGE_CFG80211_TESTMODE=y$' "$build_config"
+! grep -q '^CONFIG_PACKAGE_mt76-test=y$' "$build_config"
 
 rootfs="${E87N_ROOTFS:-}"
 if [ -z "$rootfs" ]; then
