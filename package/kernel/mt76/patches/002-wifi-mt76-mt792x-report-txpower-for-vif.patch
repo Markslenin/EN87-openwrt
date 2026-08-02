@@ -22,8 +22,8 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 ---
  mt7921/main.c  |  2 +-
  mt792x.h       |  2 ++
- mt792x_core.c  | 37 +++++++++++++++++++++++++++++++++++++
- 3 files changed, 40 insertions(+), 1 deletion(-)
+ mt792x_core.c  | 47 +++++++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 50 insertions(+), 1 deletion(-)
 
 diff --git a/mt7921/main.c b/mt7921/main.c
 index 8e80b41..4d00605 100644
@@ -55,7 +55,7 @@ diff --git a/mt792x_core.c b/mt792x_core.c
 index 726d76870..c74cd03e4 100644
 --- a/mt792x_core.c
 +++ b/mt792x_core.c
-@@ -307,6 +307,43 @@ void mt792x_flush(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
+@@ -307,6 +307,53 @@ void mt792x_flush(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
  }
  EXPORT_SYMBOL_GPL(mt792x_flush);
  
@@ -67,6 +67,7 @@ index 726d76870..c74cd03e4 100644
 +	struct mt792x_vif *mvif;
 +	struct mt76_phy *phy;
 +	s8 max_power;
++	int tx_power;
 +
 +	if (!vif)
 +		return mt76_get_txpower(hw, vif, dbm);
@@ -89,7 +90,16 @@ index 726d76870..c74cd03e4 100644
 +	if (!chan)
 +		return -EINVAL;
 +
-+	max_power = mt76_connac_get_rate_power_limit(phy, chan, &limits);
++	/* The pinned mt76 snapshot predates the upstream helper used by
++	 * 994443de. Keep the helper semantics here: apply the configured
++	 * ceiling, regulatory/SAR limits and finally the per-rate table.
++	 */
++	tx_power = 2 * phy->hw->conf.power_level;
++	if (!tx_power)
++		tx_power = 127;
++	max_power = mt76_connac_get_ch_power(phy, chan, tx_power);
++	max_power = mt76_get_sar_power(phy, chan, max_power);
++	max_power = mt76_get_rate_power_limits(phy, chan, &limits, max_power);
 +	*dbm = DIV_ROUND_UP(max_power, 2);
 +
 +	return 0;

@@ -68,7 +68,9 @@ txpower_patch = (root / "package/kernel/mt76/patches/002-wifi-mt76-mt792x-report
 for marker in (
     "994443de60baf3079300e4269b012021eec86f49",
     "mt792x_get_txpower",
-    "mt76_connac_get_rate_power_limit",
+    "mt76_connac_get_ch_power",
+    "mt76_get_sar_power",
+    "mt76_get_rate_power_limits",
     "mvif->bss_conf.mt76.ctx->def.chan",
 ):
     assert marker in txpower_patch, f"mt76 txpower backport: missing {marker}"
