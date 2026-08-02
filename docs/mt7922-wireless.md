@@ -10,14 +10,22 @@ policy unchanged.
 The image intentionally uses the inherited custom wireless-regdb policy. For
 CN, 5150-5350 MHz is published as one 160 MHz/30 dBm range without the upstream
 `DFS` and `NO-OUTDOOR` flags. This behavior is explicit project policy and must
-not be described as the upstream regulatory database.
+not be described as the upstream regulatory database. For v0.3.1 this patch is
+frozen, without content changes, at SHA-256
+`3c6cd8009f640e28898ee31c419a408cc9704ea4cf290b6586e1b90fcf0937df`.
+
+The pinned mt76 snapshot also predates upstream commit
+`994443de60baf3079300e4269b012021eec86f49`. Without it the generic mt76
+callback reads an unset cached PHY value and reports `3 dBm` for MT7921/MT7922,
+even while the firmware rate-power table is populated. v0.3.1 carries the
+upstream VIF/channel reporting fix adapted to the Linux 6.6 callback signature.
 
 ## Default policy
 
 A fresh configuration runs `/sbin/wifi config` and claims only an untouched,
 disabled mac80211 AP attached to PCI path `0000:01:00.0`. It creates:
 
-- 5 GHz, channel 36, HE80;
+- 5 GHz, channel 36, HE160, with an explicit 30 dBm regulatory ceiling;
 - SSID `E87N-5G` on `lan`;
 - WPA2/WPA3 mixed authentication with optional PMF;
 - a random per-device 20-character key in `/etc/e87n/wifi-default-key`.
@@ -39,7 +47,8 @@ e87n-wifi-profile 6g-he80
 ```
 
 HE160 remains on channel 36 and depends on both the MT7922 AP capability
-backport and the active custom CN rule. The 6 GHz profile uses automatic
+backport and the frozen custom CN rule. HE80 is retained as a recovery profile.
+The 6 GHz profile uses automatic
 channel selection, WPA3-SAE and required PMF; availability depends on the
 MT7922 AP capability and the active regulatory domain. Profile acceptance is
 therefore a runtime result, not a build-time promise.
@@ -47,7 +56,9 @@ therefore a runtime result, not a build-time promise.
 The v0.3.0 hardware-validation image was tested on the populated E87N. PCI ID
 `14c3:0616` bound `mt7921e`, the AP capability block advertised `HE160/5GHz`,
 and CN/channel 36 reached `AP-ENABLED` with `iw` reporting an actual 160 MHz
-channel centered at 5250 MHz. HE80 remains the fresh-install default.
+channel centered at 5250 MHz. v0.3.1 promotes that tested HE160 profile to the
+fresh-install default; the release still requires post-flash AP and txpower
+reporting checks.
 
 ## Image acceptance
 
@@ -72,7 +83,9 @@ Acceptance requires PCI ID `14c3:0616`, driver `mt7921e`, all dependency
 modules loaded, all four firmware files present, and a PHY linked to the PCIe
 endpoint. HE160 acceptance additionally requires the AP capability block in
 `iw phy` to advertise `HE160/5GHz`, hostapd to reach `AP-ENABLED`, and `iw dev`
-to report an actual 160 MHz channel. HE160 and 6 GHz must be tested separately
-and are not release defaults.
+to report an actual 160 MHz channel. The txpower acceptance check requires the
+configured ceiling to be 30 dBm and the reported value to be derived from the
+active VIF rate-power table rather than the old fixed `3.00 dBm` artifact.
+HE160 and 6 GHz must be tested separately; 6 GHz is not a release default.
 
 Release configurations must keep `CFG80211_TESTMODE` and `mt76-test` disabled.

@@ -2,7 +2,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=e87n-defaults
 PKG_VERSION:=1
-PKG_RELEASE:=5
+PKG_RELEASE:=6
 PKG_LICENSE:=GPL-2.0-or-later
 PKG_MAINTAINER:=EN87 OpenWrt
 

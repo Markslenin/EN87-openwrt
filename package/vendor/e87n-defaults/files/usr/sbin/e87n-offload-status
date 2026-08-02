@@ -2,6 +2,15 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 set -u
 
+sample_seconds=0
+if [ "${1:-}" = "--sample" ]; then
+	sample_seconds="${2:-10}"
+	case "$sample_seconds" in
+		*[!0-9]*|'') echo 'sample interval must be a positive integer' >&2; exit 2 ;;
+	esac
+	[ "$sample_seconds" -gt 0 ] || { echo 'sample interval must be greater than zero' >&2; exit 2; }
+fi
+
 getuci() {
 	uci -q get "$1" 2>/dev/null || printf 'unset\n'
 }
@@ -40,7 +49,21 @@ else
 	echo 'ipv6_default_route=none'
 fi
 
-for f in rx_dropped rx_errors tx_dropped tx_errors; do
+for f in rx_dropped rx_errors rx_fifo_errors rx_missed_errors rx_crc_errors tx_dropped tx_errors; do
 	printf 'eth1_%s=' "$f"
 	cat "/sys/class/net/eth1/statistics/$f" 2>/dev/null || echo unavailable
 done
+
+printf 'eth1_rx_overflow='
+ethtool -S eth1 2>/dev/null | awk '/rx_overflow:/ { print $2; found=1 } END { if (!found) print "unavailable" }'
+echo 'eth1_rx_dropped_scope=kernel_unhandled_or_discarded_frames'
+
+if [ "$sample_seconds" -gt 0 ]; then
+	before="$(cat /sys/class/net/eth1/statistics/rx_dropped 2>/dev/null || echo 0)"
+	sleep "$sample_seconds"
+	after="$(cat /sys/class/net/eth1/statistics/rx_dropped 2>/dev/null || echo 0)"
+	delta=$((after - before))
+	printf 'eth1_rx_dropped_sample_seconds=%s\n' "$sample_seconds"
+	printf 'eth1_rx_dropped_delta=%s\n' "$delta"
+	printf 'eth1_rx_dropped_rate_milli_per_second=%s\n' "$((delta * 1000 / sample_seconds))"
+fi

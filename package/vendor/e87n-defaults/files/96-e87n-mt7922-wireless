@@ -58,8 +58,9 @@ printf '%s\n' "$key" >/etc/e87n/wifi-default-key
 uci -q batch <<EOF
 set wireless.$radio.band='5g'
 set wireless.$radio.channel='36'
-set wireless.$radio.htmode='HE80'
+set wireless.$radio.htmode='HE160'
 set wireless.$radio.country='CN'
+set wireless.$radio.txpower='30'
 set wireless.$radio.disabled='0'
 set wireless.$iface.network='lan'
 set wireless.$iface.mode='ap'
@@ -70,7 +71,7 @@ set wireless.$iface.key='$key'
 set wireless.$iface.e87n_managed='1'
 EOF
 uci -q commit wireless
-logger -t e87n-mt7922 'created secure 5 GHz channel 36 HE80 AP; key stored in /etc/e87n/wifi-default-key'
+logger -t e87n-mt7922 'created secure 5 GHz channel 36 HE160 AP with a 30 dBm regulatory ceiling; key stored in /etc/e87n/wifi-default-key'
 /etc/init.d/e87n-mt7922-check enable >/dev/null 2>&1 || true
 
 exit 0

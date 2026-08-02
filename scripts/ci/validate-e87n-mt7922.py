@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-2.0-or-later
 from pathlib import Path
+import hashlib
 import re
 
 root = Path(__file__).resolve().parents[2]
@@ -41,7 +42,7 @@ assert providers == {"wpad-openssl"}, f"image provider set is {sorted(providers)
 assert "mt76-test" not in positive
 
 mt76 = (root / "package/kernel/mt76/Makefile").read_text(encoding="utf-8")
-assert "PKG_RELEASE=2" in mt76, "mt76 backport package release must be 2"
+assert "PKG_RELEASE=3" in mt76, "mt76 backport package release must be 3"
 for definition in (
     "KernelPackage/mt76-core", "KernelPackage/mt76-connac",
     "KernelPackage/mt792x-common", "KernelPackage/mt7921-common",
@@ -63,7 +64,18 @@ for marker in (
 ):
     assert marker in he160_patch, f"mt76 HE160 backport: missing {marker}"
 
+txpower_patch = (root / "package/kernel/mt76/patches/002-wifi-mt76-mt792x-report-txpower-for-vif.patch").read_text()
+for marker in (
+    "994443de60baf3079300e4269b012021eec86f49",
+    "mt792x_get_txpower",
+    "mt76_connac_get_rate_power_limit",
+    "mvif->bss_conf.mt76.ctx->def.chan",
+):
+    assert marker in txpower_patch, f"mt76 txpower backport: missing {marker}"
+
 regdb_patch = (root / "package/firmware/wireless-regdb/patches/600-custom-change-txpower-and-dfs.patch").read_text()
+regdb_bytes = (root / "package/firmware/wireless-regdb/patches/600-custom-change-txpower-and-dfs.patch").read_bytes()
+assert hashlib.sha256(regdb_bytes).hexdigest() == "3c6cd8009f640e28898ee31c419a408cc9704ea4cf290b6586e1b90fcf0937df", "frozen CN wireless-regdb patch changed"
 added_regdb = "\n".join(
     line[1:] for line in regdb_patch.splitlines()
     if line.startswith("+") and not line.startswith("+++")
@@ -72,10 +84,14 @@ assert "country CN: DFS-FCC" in regdb_patch
 assert "(5150 - 5350 @ 160), (30)" in added_regdb
 
 defaults = (root / "package/vendor/e87n-defaults/files/96-e87n-mt7922-wireless").read_text()
-for setting in ("channel='36'", "htmode='HE80'", "encryption='sae-mixed'", "country='CN'"):
+for setting in ("channel='36'", "htmode='HE160'", "txpower='30'", "encryption='sae-mixed'", "country='CN'"):
     assert setting in defaults, f"default AP: missing {setting}"
 assert "/dev/urandom" in defaults and "wifi-default-key" in defaults
 assert 'existing_ssid" != "ImmortalWrt"' in defaults
+
+status = (root / "package/vendor/e87n-defaults/files/usr/sbin/e87n-mt7922-status").read_text()
+for marker in ("wireless.txpower_ceiling_dbm", "wireless.txpower_reported_dbm"):
+    assert marker in status, f"MT7922 status tool: missing {marker}"
 
 profiles = (root / "package/vendor/e87n-defaults/files/usr/sbin/e87n-wifi-profile").read_text()
 for profile in ("5g-he80", "5g-he160", "6g-he80"):
@@ -84,7 +100,6 @@ assert "set -eu" not in profiles, "profile tool must tolerate unset OpenWrt help
 assert "set wireless.$radio.country" not in profiles, "profiles must not override country"
 assert not re.search(r"(dfs|regdb).*(disable|bypass|ignore)", profiles, re.I)
 
-status = (root / "package/vendor/e87n-defaults/files/usr/sbin/e87n-mt7922-status").read_text()
 assert 'device_real="$(readlink -f "$device"' in status
 assert '"$device_real"|"$device_real"/*' in status
 

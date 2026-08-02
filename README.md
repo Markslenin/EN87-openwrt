@@ -10,17 +10,17 @@ This repository is self-contained. It is not an outer build wrapper and does not
 - SoC: MediaTek MT7987A
 - Storage: eMMC with squashfs/F2FS persistent overlay and sysupgrade support
 - Network: E87N port mapping, MediaTek HNAT packages, and packaged MT7987 internal 2.5G PHY firmware
-- Wireless: PCIe MT7922 (`14c3:0616`) through upstream cfg80211/mac80211 and mt76/mt7921e, with a secure 5 GHz HE80 first-boot AP
+- Wireless: PCIe MT7922 (`14c3:0616`) through upstream cfg80211/mac80211 and mt76/mt7921e, with a secure CN/channel 36 HE160 first-boot AP
 - Cooling: PWM fan service with explicit reporting when no tachometer input is available
 - Display: NewVision NV3007 142x428 SPI framebuffer driver, PWM backlight, and configurable dashboard service
 - Management: LuCI with Simplified Chinese, Aurora theme, HTTPS, WireGuard UI, USB storage support, and practical diagnostics
 - Base: `mt798x-mt799x-6.6-mtwifi` at `30fbc1d6deba23c0e850185021e9ee42214925eb`
 - Imported E87N baseline tip: `627a548c276d8e18b70a3e4faf7af9fac53793f3`
 - Frozen hardware baseline: `v0.1.0` at `81d18efe3c7faf920a15823c84c5f2942d13efc5`
-- Current release: `v0.3.0`
-- Previous stable release: `v0.2.0` at `7942bcad75a449da847339a221d4c0281c74dc5e`
-- v0.3.0 hardware-validation commit: `085af11b52b4e3108a1d94e5d03ce6edf8927abe`
-- Last full-device firmware validation: `r0-085af11`, including MT7922 CN/HE160 AP operation
+- Current release: `v0.3.1`
+- Previous stable release: `v0.3.0` at `7d8aa9356b8438b6b1863b87a3555e425f731e02`
+- v0.3.1 freezes CN/channel 36 HE160 as the first-boot profile and freezes the inherited CN wireless-regdb patch by SHA-256
+- v0.3.1 backports upstream mt76 commit `994443de60baf3079300e4269b012021eec86f49` to report MT7922 transmit power from the active VIF channel instead of the uninitialized generic PHY cache
 
 The E87N image intentionally does not inherit the H5000M Wi-Fi 7 or modem
 package stacks. Its populated MT7922 uses the upstream mt76 driver family.
@@ -81,13 +81,14 @@ mt76 package revision `-r2`, a single `wpad-openssl` provider and no wireless
 test-mode package. Release assets include the manifest, profile metadata and
 build evidence alongside the firmware.
 
-The currently deployed E87N boots as `r0-085af11` with a writable F2FS
-overlay. Board identity, Ethernet mapping (`eth1` WAN and `eth0` LAN), packaged
+The v0.3.1 release process repeats the clean GCE build, generated-asset checks,
+preserved-config sysupgrade and post-flash hardware gates. Board identity,
+Ethernet mapping (`eth1` WAN and `eth0` LAN), packaged
 MT7987 PHY firmware, LuCI/Aurora, HTTPS, fan, framebuffer, backlight, display,
 OpenClash packaging and retained private configuration have been observed live.
 The PCIe MT7922 (`14c3:0616`) binds `mt7921e`; its AP capability advertises
 `HE160/5GHz`, and a CN/channel 36 AP reached `AP-ENABLED` at an actual 160 MHz
-width. The prior MediaTek HNAT policy completed a 2 GiB direct-flow test at
+width. The MediaTek HNAT policy completed a 2 GiB direct-flow test at
 about 538 Mbit/s with PPE bindings and no RX error or overflow increase. See
 `docs/hnat-validation.md` for the acceptance boundary.
 

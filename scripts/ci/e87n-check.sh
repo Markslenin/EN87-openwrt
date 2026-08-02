@@ -22,6 +22,7 @@ package/vendor/e87n-defaults/files/usr/sbin/e87n-offload-status
 package/vendor/e87n-defaults/files/usr/sbin/e87n-wifi-profile
 package/kernel/mt76/Makefile
 package/kernel/mt76/patches/001-wifi-mt76-mt7921-add-160-mhz-ap-for-mt7922.patch
+package/kernel/mt76/patches/002-wifi-mt76-mt792x-report-txpower-for-vif.patch
 package/vendor/display-control/Makefile
 package/vendor/fancontrol/Makefile
 package/vendor/openclash-core/Makefile
@@ -53,8 +54,8 @@ fi
 grep -q 'BOARD_NAME := edgepi,e87n' target/linux/mediatek/image/filogic.mk
 grep -q 'e87n-defaults' target/linux/mediatek/image/filogic.mk
 grep -q 'luci-app-turboacc-mtk' target/linux/mediatek/image/filogic.mk
-grep -q '^PKG_RELEASE:=5$' package/vendor/e87n-defaults/Makefile
-grep -q '^PKG_RELEASE=2$' package/kernel/mt76/Makefile
+grep -q '^PKG_RELEASE:=6$' package/vendor/e87n-defaults/Makefile
+grep -q '^PKG_RELEASE=3$' package/kernel/mt76/Makefile
 grep -q 'OpenAI Codex' CONTRIBUTORS.md
 grep -q 'e87n-release-build.yml' README.md
 grep -q 'release-sha256sums' docs/development.md

@@ -37,6 +37,24 @@ while ! output="$(probe)"; do
 	elapsed=$((elapsed + 2))
 done
 printf '%s\n' "$output"
+phy="$(printf '%s\n' "$output" | sed -n 's/^phy=//p')"
+
+radio="$(uci -q show wireless | sed -n "s/^wireless\.\([^.=]*\)\.path='.*0000:01:00.0.*'/\1/p" | head -n 1)"
+if [ -n "$radio" ]; then
+	printf 'wireless.country=%s\n' "$(uci -q get wireless."$radio".country || echo unset)"
+	printf 'wireless.channel=%s\n' "$(uci -q get wireless."$radio".channel || echo unset)"
+	printf 'wireless.htmode=%s\n' "$(uci -q get wireless."$radio".htmode || echo unset)"
+	printf 'wireless.txpower_ceiling_dbm=%s\n' "$(uci -q get wireless."$radio".txpower || echo auto)"
+fi
+
+if [ -n "$phy" ]; then
+	ifname="$(iw dev 2>/dev/null | awk '/Interface / { name=$2 } /wiphy / { if ($2 == 0 && name != "") { print name; exit } }')"
+	[ -n "$ifname" ] || ifname="$(iw dev 2>/dev/null | awk '/Interface / { print $2; exit }')"
+	if [ -n "$ifname" ]; then
+		reported="$(iw dev "$ifname" info 2>/dev/null | awk '/txpower/ { print $2; exit }')"
+		printf 'wireless.txpower_reported_dbm=%s\n' "${reported:-unavailable}"
+	fi
+fi
 
 for module in mt76 mt76_connac_lib mt792x_lib mt7921_common mt7921e; do
 	if [ -d "/sys/module/$module" ]; then

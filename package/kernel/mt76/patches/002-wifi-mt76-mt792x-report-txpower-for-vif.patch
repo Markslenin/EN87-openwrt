@@ -1,0 +1,103 @@
+From 994443de60baf3079300e4269b012021eec86f49 Mon Sep 17 00:00:00 2001
+From: Sean Wang <sean.wang@mediatek.com>
+Date: Wed, 1 Apr 2026 11:23:22 -0700
+Subject: [PATCH] wifi: mt76: mt792x: report txpower for the requested vif
+
+mt792x currently reports txpower from the generic PHY cached state,
+which may not match the requested vif context.
+
+Resolve the requested vif channel and derive txpower from that channel
+instead, with fallback to the current PHY chandef if no valid chanctx is
+available.
+
+This is the upstream fix adapted to the pre-link-id get_txpower callback used
+by the pinned Linux 6.6 mt76 snapshot.
+
+Upstream-Commit: 994443de60baf3079300e4269b012021eec86f49
+Reported-by: Devin Wittmayer <lucid_duck@justthetip.ca>
+Tested-by: Devin Wittmayer <lucid_duck@justthetip.ca>
+Tested-by: Satadru Pramanik <satadru@gmail.com>
+Signed-off-by: Sean Wang <sean.wang@mediatek.com>
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+ mt7921/main.c  |  2 +-
+ mt792x.h       |  2 ++
+ mt792x_core.c  | 37 +++++++++++++++++++++++++++++++++++++
+ 3 files changed, 40 insertions(+), 1 deletion(-)
+
+diff --git a/mt7921/main.c b/mt7921/main.c
+index 8e80b41..4d00605 100644
+--- a/mt7921/main.c
++++ b/mt7921/main.c
+@@ -1539,7 +1539,7 @@ const struct ieee80211_ops mt7921_ops = {
+ 	.wake_tx_queue = mt76_wake_tx_queue,
+ 	.release_buffered_frames = mt76_release_buffered_frames,
+ 	.channel_switch_beacon = mt7921_channel_switch_beacon,
+-	.get_txpower = mt76_get_txpower,
++	.get_txpower = mt792x_get_txpower,
+ 	.get_stats = mt792x_get_stats,
+ 	.get_et_sset_count = mt792x_get_et_sset_count,
+ 	.get_et_strings = mt792x_get_et_strings,
+diff --git a/mt792x.h b/mt792x.h
+index 389456736..55adb6926 100644
+--- a/mt792x.h
++++ b/mt792x.h
+@@ -382,6 +382,8 @@ void mt792x_csa_timer(struct timer_list *timer);
+ void mt792x_csa_timer(struct timer_list *timer);
+ void mt792x_flush(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
+ 		  u32 queues, bool drop);
++int mt792x_get_txpower(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
++		       int *dbm);
+ int mt792x_assign_vif_chanctx(struct ieee80211_hw *hw,
+ 			      struct ieee80211_vif *vif,
+ 			      struct ieee80211_bss_conf *link_conf,
+diff --git a/mt792x_core.c b/mt792x_core.c
+index 726d76870..c74cd03e4 100644
+--- a/mt792x_core.c
++++ b/mt792x_core.c
+@@ -307,6 +307,43 @@ void mt792x_flush(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
+ }
+ EXPORT_SYMBOL_GPL(mt792x_flush);
+ 
++int mt792x_get_txpower(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
++		       int *dbm)
++{
++	struct mt76_power_limits limits = {};
++	struct ieee80211_channel *chan;
++	struct mt792x_vif *mvif;
++	struct mt76_phy *phy;
++	s8 max_power;
++
++	if (!vif)
++		return mt76_get_txpower(hw, vif, dbm);
++
++	mvif = (struct mt792x_vif *)vif->drv_priv;
++	phy = mvif->phy->mt76;
++
++	mt792x_mutex_acquire(mvif->phy->dev);
++
++	if (mvif->bss_conf.mt76.ctx && mvif->bss_conf.mt76.ctx->def.chan)
++		chan = mvif->bss_conf.mt76.ctx->def.chan;
++	else
++		/* Fall back to the current PHY chandef if the requested vif
++		 * does not have a valid channel context.
++		 */
++		chan = phy->chandef.chan;
++
++	mt792x_mutex_release(mvif->phy->dev);
++
++	if (!chan)
++		return -EINVAL;
++
++	max_power = mt76_connac_get_rate_power_limit(phy, chan, &limits);
++	*dbm = DIV_ROUND_UP(max_power, 2);
++
++	return 0;
++}
++EXPORT_SYMBOL_GPL(mt792x_get_txpower);
++
+ int mt792x_assign_vif_chanctx(struct ieee80211_hw *hw,
+ 			      struct ieee80211_vif *vif,
+ 			      struct ieee80211_bss_conf *link_conf,
+-- 
+2.43.0

@@ -21,6 +21,14 @@ for package in \
 	luci-mod-network luci-mod-status pciutils ethtool iperf3 tcpdump-mini; do
 	has_package "$package" || { echo "manifest missing $package" >&2; exit 1; }
 done
+grep -Eq '^kmod-mt7921e - .+-r3$' "$manifest" || {
+	echo 'manifest does not contain the txpower-backport mt7921e release' >&2
+	exit 1
+}
+grep -Eq '^e87n-defaults - 1-r6$' "$manifest" || {
+	echo 'manifest does not contain the HE160-default policy release' >&2
+	exit 1
+}
 # libiwinfo is a virtual selection; the manifest records its ABI-versioned
 # implementation (for example libiwinfo20230701), not the virtual name.
 grep -Eq '^libiwinfo[0-9]+( - |$)' "$manifest" || {
@@ -70,5 +78,10 @@ for file in \
 	lib/netifd/wireless/mac80211.sh; do
 	test -e "$rootfs/$file" || { echo "rootfs missing $file" >&2; exit 1; }
 done
+grep -Fq "set wireless.\$radio.htmode='HE160'" \
+	"$rootfs/etc/uci-defaults/96-e87n-mt7922-wireless"
+grep -Fq "set wireless.\$radio.txpower='30'" \
+	"$rootfs/etc/uci-defaults/96-e87n-mt7922-wireless"
+grep -q 'wireless.txpower_reported_dbm' "$rootfs/usr/sbin/e87n-mt7922-status"
 
 echo 'E87N MT7922 image checks passed'

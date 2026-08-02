@@ -11,7 +11,7 @@ image formats so `make defconfig` remains reproducible.
 - EdgePi E87N DTS, eMMC sysupgrade, F2FS overlay and port mapping.
 - MediaTek HNAT/WED support and Safexcel crypto acceleration.
 - TurboACC configured for the MediaTek HNAT engine, with IPv6 HNAT disabled.
-- `e87n-defaults` release 5 carries the current first-boot network/wireless policy and
+- `e87n-defaults` release 6 carries the current first-boot network/wireless policy and
   acceleration diagnostic script; bump its package release whenever installed
   file content changes.
 - MT7987 internal 2.5G PHY driver and PMB/DSP firmware.
@@ -40,18 +40,27 @@ image formats so `make defconfig` remains reproducible.
   `600-custom-change-txpower-and-dfs.patch` is intentionally active: for CN it
   publishes 5150-5350 MHz at up to 160 MHz/30 dBm without the upstream
   `DFS`/`NO-OUTDOOR` flags. This is a project policy, not an upstream default.
+- That CN patch is frozen at SHA-256
+  `3c6cd8009f640e28898ee31c419a408cc9704ea4cf290b6586e1b90fcf0937df`;
+  CI fails if its bytes change. v0.3.1 does not alter its regulatory policy.
 - The pinned February 2025 mt76 snapshot carries the focused upstream backport
   `8a24527e6c63914b838698ed78c44cb8a189129a`, enabling 160 MHz capability for
   MT7922 AP interfaces without updating the rest of mt76.
+- It also carries upstream txpower-reporting fix
+  `994443de60baf3079300e4269b012021eec86f49`, adapted only for the Linux 6.6
+  callback signature. The fix reports the active VIF/channel rate-power limit
+  instead of the unset generic PHY cache that appeared as `3 dBm`.
 - `wifi-scripts`, netifd/ucode dependencies, LuCI wireless configuration and
   status support, `iw-full`, iwinfo and rpcd iwinfo integration.
 - Exactly one combined AP/supplicant provider: `wpad-openssl`, accompanied by
   `hostapd-utils` and `wpa-cli`.
-- A fresh installation creates a secure `E87N-5G` AP on channel 36 HE80. The
+- A fresh installation creates a secure `E87N-5G` AP on channel 36 HE160 with
+  an explicit 30 dBm regulatory ceiling. EEPROM and per-rate limits continue
+  to cap actual transmit power. The
   generated key is unique to the device and is stored mode 0600 at
   `/etc/e87n/wifi-default-key`; preserved user configuration is not replaced.
-- HE160 and 6 GHz remain opt-in profiles. HE160 requires separate live RF
-  acceptance; see `docs/mt7922-wireless.md`.
+- HE80 remains the recovery profile and 6 GHz remains opt-in. HE160 still
+  requires live RF acceptance; see `docs/mt7922-wireless.md`.
 
 ### Storage and diagnostics
 
